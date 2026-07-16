@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMMS/EAM - Estructura por Módulos</title>
+  <style>
+    :root { --bg:#0b1220; --card:#121b2e; --text:#e7eefc; --muted:#a7b4d6; --accent:#4aa3ff; --line:rgba(255,255,255,.08); }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; background:var(--bg); color:var(--text); }
+    header { padding:28px 18px; border-bottom:1px solid var(--line); }
+    header h1 { margin:0 0 8px; font-size:20px; letter-spacing:.2px; }
+    header p { margin:0; color:var(--muted); max-width:980px; }
+    .wrap { max-width:1100px; margin:0 auto; padding:18px; }
+    .grid { display:grid; grid-template-columns: repeat(12, 1fr); gap:14px; }
+    .card { background: linear-gradient(180deg, rgba(74,163,255,.08), rgba(18,27,46,1)); border:1px solid var(--line); border-radius:14px; padding:14px; }
+    .span-4 { grid-column: span 4; }
+    .span-6 { grid-column: span 6; }
+    .span-12 { grid-column: span 12; }
+
+    .card h2 { font-size:14px; margin:0 0 8px; color:var(--text); display:flex; align-items:center; gap:8px; }
+    .badge { font-size:12px; padding:4px 8px; border-radius:999px; background: rgba(74,163,255,.15); border:1px solid rgba(74,163,255,.35); color: var(--accent); }
+    .meta { color:var(--muted); font-size:12px; margin-top:6px; }
+
+    ul { margin:10px 0 0; padding:0 0 0 18px; color:var(--text); }
+    li { margin:6px 0; color:var(--muted); }
+    .k { color:var(--text); }
+
+    .row { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    .pill { font-size:12px; border:1px solid var(--line); padding:6px 10px; border-radius:999px; color:var(--muted); }
+
+    .footer { margin-top:18px; color:var(--muted); font-size:12px; line-height:1.5; border-top:1px solid var(--line); padding-top:14px; }
+
+    @media (max-width: 980px) {
+      .span-4, .span-6 { grid-column: span 12; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>CMMS/EAM — Estructura de Software (Vista de Arquitectura)</h1>
+      <p>Este archivo muestra una estructura navegable por módulos y cómo se conectan. Útil como mapa para implementar en web/app (HTML/CSS/TSX) o backend.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="grid">
+      <div class="card span-12">
+        <h2><span class="badge">Stack</span> PostgreSQL + TimescaleDB + RabbitMQ + MQTT</h2>
+        <div class="row">
+          <div class="pill">OLTP: PostgreSQL</div>
+          <div class="pill">Time-series: TimescaleDB (SCADA)</div>
+          <div class="pill">Eventos de negocio: RabbitMQ</div>
+          <div class="pill">Ingesta IIoT: MQTT</div>
+        </div>
+        <div class="meta">Estructura lógica (dominios) con eventos para desacoplar módulos.</div>
+      </div>
+
+      <div class="card span-6">
+        <h2><span class="badge">Dominio 1</span> Plant & Asset Backbone</h2>
+        <ul>
+          <li><span class="k">Equipo</span> (Equipment) + jerarquía multi-planta (Org→Plant→Area→Line→Equipment)</li>
+          <li><span class="k">Catálogos</span> de estándares (módulo 9)</li>
+        </ul>
+        <div class="meta">Módulos consumidores: 1,3,4,6,7,10,11.</div>
+      </div>
+
+      <div class="card span-6">
+        <h2><span class="badge">Dominio 2</span> Maintenance Core (OT/Plan/Windows/Release)</h2>
+        <ul>
+          <li><span class="k">Work Orders</span> correctivas/preventivas/predictivas</li>
+          <li><span class="k">Maintenance Windows</span> coordinación con producción (módulo 4)</li>
+          <li><span class="k">Equipment Release</span> controlado por Calidad (módulo 11)</li>
+        </ul>
+        <div class="meta">Módulos consumidores: 3,4,5,8,10,11.</div>
+      </div>
+
+      <div class="card span-4">
+        <h2><span class="badge">1</span> Inventario</h2>
+        <ul>
+          <li>Stock por <span class="k">ubicación</span> + criticidad</li>
+          <li>Trazabilidad con <span class="k">InventoryTransaction</span></li>
+          <li>Alertas de mínimo y reserva/consumo desde OT</li>
+        </ul>
+        <div class="meta">Impacta costos (2) y KPIs (10).</div>
+      </div>
+
+      <div class="card span-4">
+        <h2><span class="badge">2</span> Costos & ROI</h2>
+        <ul>
+          <li>Costos directos/indirectos por OT/equipo</li>
+          <li>Costeo desde repuestos, mano de obra y servicios</li>
+          <li>ROI usando baseline vs actual</li>
+        </ul>
+        <div class="meta">Sustenta decisiones (5) y evalúa impacto en (10).</div>
+      </div>
+
+      <div class="card span-4">
+        <h2><span class="badge">3</span> Fallas & Downtime</h2>
+        <ul>
+          <li>Reporte en tiempo real y clasificación (modo/causa/efecto)</li>
+          <li>Registro de <span class="k">DowntimeEvent</span></li>
+          <li>Genera OT correctiva + disparadores para (7,8,10)</li>
+        </ul>
+        <div class="meta">Impacta KPIs de confiabilidad (10).</div>
+      </div>
+
+      <div class="card span-6">
+        <h2><span class="badge">4</span> Mantenimiento ↔ Producción</h2>
+        <ul>
+          <li>Ventanas y estimación de impacto en capacidad</li>
+          <li>Solicitudes a producción y reprogramación</li>
+          <li>Liberación de equipos (habilitada por Calidad)</li>
+        </ul>
+        <div class="meta">Afecta disponibilidad y OEE (10).</div>
+      </div>
+
+      <div class="card span-6">
+        <h2><span class="badge">5</span> Compras Integradas</h2>
+        <ul>
+          <li>OT → Requisition → Purchase Order (ERP)</li>
+          <li>Flujo de aprobaciones con urgencia por criticidad</li>
+          <li>Recepción → actualización de inventario + costos</li>
+        </ul>
+        <div class="meta">Cierra ciclo con (1) y (2).</div>
+      </div>
+
+      <div class="card span-4">
+        <h2><span class="badge">6</span> SCADA/IIoT Predictivo</h2>
+        <ul>
+          <li>Ingesta MQTT de tags y métricas (runtime/temperatura/etc.)</li>
+          <li>Reglas predictivas para disparar OT/planes</li>
+          <li>Sincroniza evidencia para (7) y mejora KPIs (10)</li>
+        </ul>
+        <div class="meta">Usa TimescaleDB (tag_ingestion_event).</div>
+      </div>
+
+      <div class="card span-4">
+        <h2><span class="badge">7</span> Calidad en Fiabilidad (FMEA/RCA)</h2>
+        <ul>
+          <li>AMFE/FMEA y definición de criticidad</li>
+          <li>RCA liderado por Calidad (métodos estructurados)</li>
+          <li>Acciones CAPA + control de efectividad</li>
+        </ul>
+        <div class="meta">Retroalimenta estándares (9) y KPIs (10).</div>
+      </div>
+
+      <div class="card span-4">
+        <h2><span class="badge">8</span> Comunicación & Workflow</h2>
+        <ul>
+          <li>Notificaciones por eventos</li>
+          <li>Workflows de aprobaciones (decisiones auditadas)</li>
+          <li>Muro de comentarios y evidencias</li>
+        </ul>
+        <div class="meta">Garantiza trazabilidad end-to-end.</div>
+      </div>
+
+      <div class="card span-12">
+        <h2><span class="badge">9</span> Multi-Área: Librerías Globales + Overrides</h2>
+        <ul>
+          <li>Plantillas globales versionadas (downtime reasons, catálogos de repuestos, taxonomías)</li>
+          <li>Overrides locales por planta con aprobación</li>
+          <li>Comparabilidad de KPIs entre plantas (10)</li>
+        </ul>
+      </div>
+
+      <div class="card span-6">
+        <h2><span class="badge">10</span> KPIs (MTBF, MTTR, Disponibilidad, OEE)</h2>
+        <ul>
+          <li>Motor analítico alimentado por downtime (3/4)</li>
+          <li>OEE con inputs de producción/calidad</li>
+          <li>Cumplimiento preventivo y causas de desvío</li>
+        </ul>
+      </div>
+
+      <div class="card span-6">
+        <h2><span class="badge">11</span> Calidad en Liberación, Auditorías y Desviaciones</h2>
+        <ul>
+          <li>Auditorías por checklist y gate de calidad</li>
+          <li>Nonconformance → CAPA → verificación efectividad</li>
+          <li>Bloquea/permite release hacia producción (4)</li>
+        </ul>
+      </div>
+
+      <div class="card span-12">
+        <h2><span class="badge">Arquitectura de Datos</span> Cómo se conectan los módulos</h2>
+        <div class="meta">Principales líneas de impacto (causalidad):</div>
+        <ul>
+          <li>Falla (3) → OT + Downtime → KPIs (10) + Costos (2) + RCA/CAPA (7,11)</li>
+          <li>Consumo/Stockout (1) → costos + impacto en tiempos de reparación (10)</li>
+          <li>OT → Requisition/OC (5) → lead time → MTTR/Disponibilidad (10) + costos reales (2)</li>
+          <li>SCADA triggers (6) → preventive/predictive → reduce fallas → MTBF/ROI (10,2)</li>
+          <li>Gate de Calidad (11) → bloquea release → ventanas (4) y OEE calidad (10)</li>
+        </ul>
+      </div>
+
+    </section>
+
+    <div class="footer">
+      <div><b>Relacionado:</b> el DDL físico se encuentra en <code>CMMS_schema.sql</code>.</div>
+      <div>Si quieres una vista “real” tipo TSX/React con diagrama de componentes (dominios → eventos → BD), te lo genero en el siguiente paso.</div>
+    </div>
+  </main>
+</body>
+</html>
+

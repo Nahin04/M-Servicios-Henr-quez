@@ -1,0 +1,3007 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMMS Enterprise - Multiservicios Henriquez</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome para Iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js para Reportes y KPIs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        /* Estilos de scrollbar personalizados */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        /* Estilos de Impresión para Orden de Trabajo */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printArea, #printArea * {
+                visibility: visible;
+            }
+            #printArea {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+                color: black;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+        /* Animación de pulso para simulación SCADA */
+        .scada-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col overflow-hidden select-none bg-slate-50">
+
+    <!-- CONTENEDOR PRINCIPAL DE LA APLICACIÓN -->
+    <div class="flex flex-1 overflow-hidden h-full w-full">
+
+        <!-- BARRA LATERAL (SIDEBAR) -->
+        <aside class="w-72 bg-slate-900 text-slate-300 flex flex-col justify-between no-print shrink-0 border-r border-slate-800 shadow-xl">
+            <div class="p-6 flex flex-col h-full overflow-y-auto">
+                <!-- Logo & Empresa -->
+                <div class="flex items-center space-x-3 mb-8">
+                    <div class="bg-blue-600 text-white p-2.5 rounded-lg shadow-md shadow-blue-500/20">
+                        <i class="fa-solid fa-screwdriver-wrench text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg text-white tracking-tight leading-tight">M. Henriquez</h1>
+                        <p class="text-[10px] text-blue-400 font-bold tracking-wider uppercase">Enterprise CMMS / EAM</p>
+                    </div>
+                </div>
+
+                <!-- Perfil de Usuario y Rol -->
+                <div class="bg-slate-800/60 border border-slate-700 p-4 rounded-xl mb-6">
+                    <div class="flex items-center space-x-3 mb-3">
+                        <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm shadow-inner">
+                            AH
+                        </div>
+                        <div>
+                            <p class="text-[9px] text-slate-400 font-semibold tracking-wider uppercase">Usuario Activo</p>
+                            <p class="text-sm font-bold text-white">Abdiel Henriquez</p>
+                        </div>
+                    </div>
+                    <!-- Switcher de Roles -->
+                    <div class="pt-2.5 border-t border-slate-700/60">
+                        <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Rol de Acceso</label>
+                        <select id="user-role-selector" onchange="changeUserRole()" class="w-full text-xs font-semibold p-1.5 border border-slate-700 rounded bg-slate-900 text-slate-300 focus:outline-none focus:border-blue-500">
+                            <option value="Administrador">Administrador (Total)</option>
+                            <option value="Supervisor">Supervisor de Obra</option>
+                            <option value="Planificador">Planificador Técnico</option>
+                            <option value="Técnico">Técnico Mecánico</option>
+                            <option value="Operador">Operador de Equipo</option>
+                            <option value="Gerencia">Gerencia / Finanzas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Navegación de Módulos -->
+                <nav class="space-y-1.5 flex-1 pr-1">
+                    <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white shadow-md">
+                        <i class="fa-solid fa-chart-line w-5 text-sm"></i>
+                        <span>Dashboard General</span>
+                    </button>
+                    <button onclick="switchTab('equipos')" id="btn-equipos" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:bg-slate-800 hover:text-white">
+                        <i class="fa-solid fa-truck-monster w-5 text-sm"></i>
+                        <span>Gestión de Equipos</span>
+                    </button>
+                    <button onclick="switchTab('ots')" id="btn-ots" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:bg-slate-800 hover:text-white">
+                        <i class="fa-solid fa-file-invoice w-5 text-sm"></i>
+                        <span>Órdenes de Trabajo (OT)</span>
+                    </button>
+                    <button onclick="switchTab('inventario')" id="btn-inventario" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:bg-slate-800 hover:text-white">
+                        <i class="fa-solid fa-boxes-stacked w-5 text-sm"></i>
+                        <span>Inventario de Repuestos</span>
+                    </button>
+                    <button onclick="switchTab('costos')" id="btn-costos" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:bg-slate-800 hover:text-white">
+                        <i class="fa-solid fa-file-invoice-dollar w-5 text-sm"></i>
+                        <span>Costos & Presupuestos</span>
+                    </button>
+                    <button onclick="switchTab('fallas')" id="btn-fallas" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:bg-slate-800 hover:text-white">
+                        <i class="fa-solid fa-triangle-exclamation w-5 text-sm"></i>
+                        <span>Reportes de Falla</span>
+                    </button>
+                    <button onclick="switchTab('calidad')" id="btn-calidad" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:bg-slate-800 hover:text-white">
+                        <i class="fa-solid fa-clipboard-check w-5 text-sm"></i>
+                        <span>Calidad & Auditoría</span>
+                    </button>
+                    <button onclick="switchTab('comunicacion')" id="btn-comunicacion" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:bg-slate-800 hover:text-white">
+                        <i class="fa-solid fa-comments w-5 text-sm"></i>
+                        <span>Bitácora de Comunicación</span>
+                    </button>
+                    <button onclick="switchTab('kb')" id="btn-kb" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:bg-slate-800 hover:text-white">
+                        <i class="fa-solid fa-book w-5 text-sm"></i>
+                        <span>Base de Conocimiento</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Footer Autorizado -->
+            <div class="p-6 border-t border-slate-800 bg-slate-950/40">
+                <p class="text-[9px] text-slate-500 font-bold tracking-wider uppercase">Plataforma CMMS</p>
+                <p class="text-xs font-bold text-slate-300">Elaborado por Nahin Ceballos</p>
+            </div>
+        </aside>
+
+        <!-- ÁREA DE CONTENIDO PRINCIPAL -->
+        <main class="flex-1 flex flex-col bg-white overflow-hidden">
+            
+            <!-- CABECERA SUPERIOR (TOPBAR) -->
+            <header class="h-16 border-b border-slate-200 px-8 flex items-center justify-between no-print shrink-0 bg-white shadow-sm z-10">
+                <div class="flex items-center space-x-4">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Módulo Actual</span>
+                    <i class="fa-solid fa-chevron-right text-xs text-slate-300"></i>
+                    <span id="current-module-title" class="text-sm font-bold text-slate-800">Dashboard General</span>
+                </div>
+                
+                <!-- Acciones Rápidas Globales -->
+                <div class="flex items-center space-x-4">
+                    <span class="text-xs font-semibold text-slate-500"><i class="fa-solid fa-location-dot text-blue-500 mr-1"></i> Sabanitas, Colón</span>
+                    <button onclick="triggerGlobalCriticalFailure()" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-circle-exclamation scada-pulse text-red-500"></i>
+                        <span>Simular Paro de Emergencia</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- CONTENEDOR DE ALERTAS DEL SISTEMA -->
+            <div id="system-toasts-container" class="px-8 mt-4 space-y-2 no-print shrink-0"></div>
+
+            <!-- ÁREA DE PESTAÑAS (SCROLLABLE INDEPENDIENTE) -->
+            <div class="flex-1 overflow-y-auto p-8 bg-slate-50/50">
+
+                <!-- 1. DASHBOARD GENERAL -->
+                <section id="module-dashboard" class="module-tab space-y-8">
+                    <!-- Fichas de Estado de Equipos -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4" id="dashboard-hours-container">
+                        <!-- Generado dinámicamente -->
+                    </div>
+
+                    <!-- Métricas de Clase Mundial (KPIs ISO 55000) -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Disponibilidad de Flota</p>
+                            <p id="kpi-availability" class="text-3xl font-extrabold text-blue-600 mt-2">0.0%</p>
+                            <p class="text-[11px] text-emerald-600 mt-1"><i class="fa-solid fa-arrow-up"></i> Meta de Planta: >92.0%</p>
+                        </div>
+                        <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Confiabilidad Operacional</p>
+                            <p id="kpi-reliability" class="text-3xl font-extrabold text-slate-800 mt-2">0.0%</p>
+                            <p class="text-[11px] text-slate-400 mt-1">Estimación Weibull / RCM</p>
+                        </div>
+                        <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">MTBF Promedio</p>
+                            <p id="kpi-mtbf" class="text-3xl font-extrabold text-slate-800 mt-2">0 Hrs</p>
+                            <p class="text-[11px] text-emerald-600 mt-1"><i class="fa-solid fa-clock"></i> Tiempo óptimo de corrida</p>
+                        </div>
+                        <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">MTTR Promedio</p>
+                            <p id="kpi-mttr" class="text-3xl font-extrabold text-slate-800 mt-2">0.0 Hrs</p>
+                            <p class="text-[11px] text-emerald-600 mt-1"><i class="fa-solid fa-arrow-down"></i> Tiempo de reparación técnico</p>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos y Selectores de Línea de Tiempo -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Distribución de costos por Proyecto de Obra -->
+                        <div class="border border-slate-200 bg-white rounded-xl p-6 md:col-span-2 shadow-sm flex flex-col">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                                <h4 class="font-bold text-slate-800 text-sm">Gasto de Mantenimiento Desglosado (USD - ITBMS Incluido)</h4>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs font-semibold text-slate-500">Periodo:</span>
+                                    <select id="time-filter-dashboard" onchange="updateDashboardCharts()" class="text-xs p-1.5 border border-slate-200 rounded bg-slate-50 focus:outline-none focus:border-blue-500 font-semibold">
+                                        <option value="diario">Diario</option>
+                                        <option value="semanal">Semanal</option>
+                                        <option value="mensual" selected>Mensual</option>
+                                        <option value="anual">Anual</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="h-64 flex-1">
+                                <canvas id="kpiTrendChart" class="w-full h-full"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Estado Operativo General -->
+                        <div class="border border-slate-200 rounded-xl p-6 bg-white shadow-sm flex flex-col justify-between">
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-sm mb-4">Estado del Portafolio de Activos</h4>
+                                <div class="space-y-4">
+                                    <div>
+                                        <div class="flex justify-between text-xs font-bold text-slate-600 mb-1">
+                                            <span>Equipos Operativos</span>
+                                            <span id="dash-operativos-txt">0 / 5</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 rounded-full h-2">
+                                            <div id="dash-operativos-bar" class="bg-emerald-500 h-2 rounded-full" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between text-xs font-bold text-slate-600 mb-1">
+                                            <span>Tasa de Resolución de OTs</span>
+                                            <span id="dash-ots-resolved-txt">0%</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 rounded-full h-2">
+                                            <div id="dash-ots-resolved-bar" class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between text-xs font-bold text-slate-600 mb-1">
+                                            <span>Conformidad Calidad ISO 55000</span>
+                                            <span>100% Certificada</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 rounded-full h-2">
+                                            <div class="bg-indigo-600 h-2 rounded-full" style="width: 100%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg text-xs mt-4">
+                                <p class="font-bold text-blue-800"><i class="fa-solid fa-circle-info mr-1"></i> Sincronización Automática</p>
+                                <p class="text-blue-700 text-[11px] mt-0.5">El sistema actualiza todas las métricas en tiempo real al agregar manuales o procesar cierres de órdenes de trabajo.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. GESTIÓN DE EQUIPOS -->
+                <section id="module-equipos" class="module-tab hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                        <div>
+                            <h3 class="font-bold text-xl text-slate-800">Control de Activos Físicos (Flota Completa)</h3>
+                            <p class="text-xs text-slate-500">Administre códigos, parámetros operativos, suba fotografías personales y vincule manuales o enlaces directos.</p>
+                        </div>
+                        <button onclick="openNewAssetModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-md self-start sm:self-auto">
+                            <i class="fa-solid fa-plus mr-1"></i> Registrar Nuevo Activo
+                        </button>
+                    </div>
+
+                    <!-- Cuadrícula de Maquinarias (Diseño de Tarjeta Horizontal con foto a la izquierda) -->
+                    <div id="assets-grid-container" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <!-- Cargado dinámicamente -->
+                    </div>
+                </section>
+
+                <!-- 3. ÓRDENES DE TRABAJO (OT) -->
+                <section id="module-ots" class="module-tab hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                        <div>
+                            <h3 class="font-bold text-xl text-slate-800">Órdenes de Trabajo (OT) y Fichas de Campo</h3>
+                            <p class="text-xs text-slate-500">Gestione e imprima órdenes de mantenimiento preventivo, predictivo, correctivo y de emergencia.</p>
+                        </div>
+                        <button onclick="openNewOtModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-md self-start sm:self-auto">
+                            <i class="fa-solid fa-plus mr-1"></i> Nueva Orden de Trabajo
+                        </button>
+                    </div>
+
+                    <!-- Filtros Rápidos -->
+                    <div class="bg-white p-4 border border-slate-200 rounded-xl flex flex-wrap gap-4 items-center shadow-sm">
+                        <span class="text-xs font-bold text-slate-500">Filtrar por:</span>
+                        <select id="filter-ot-priority" onchange="renderOtsTable()" class="text-xs p-1.5 border border-slate-200 rounded bg-slate-50 focus:outline-none focus:border-blue-500">
+                            <option value="Todos">Todas las Prioridades</option>
+                            <option value="Alta">Alta / Emergencia</option>
+                            <option value="Media">Media</option>
+                            <option value="Baja">Baja</option>
+                        </select>
+                        <select id="filter-ot-asset" onchange="renderOtsTable()" class="text-xs p-1.5 border border-slate-200 rounded bg-slate-50 focus:outline-none focus:border-blue-500">
+                            <option value="Todos">Todos los Equipos</option>
+                            <option value="Caterpillar 416">Caterpillar 416</option>
+                            <option value="Caterpillar 320">Caterpillar 320</option>
+                            <option value="Caterpillar D6">Caterpillar D6</option>
+                            <option value="Caterpillar 950 GC">Caterpillar 950 GC</option>
+                            <option value="Caterpillar CS11 GC">Caterpillar CS11 GC</option>
+                        </select>
+                    </div>
+
+                    <!-- Tabla de OTs Activas -->
+                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[800px]">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase">
+                                        <th class="p-4">OT</th>
+                                        <th class="p-4">Equipo / Proyecto</th>
+                                        <th class="p-4">Tipo / Diagnóstico</th>
+                                        <th class="p-4">Prioridad</th>
+                                        <th class="p-4">Estado</th>
+                                        <th class="p-4">Costo Total (+ITBMS)</th>
+                                        <th class="p-4 text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ot-table-body" class="text-xs divide-y divide-slate-100">
+                                    <!-- Cargado dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. INVENTARIO DE REPUESTOS -->
+                <section id="module-inventario" class="module-tab hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                        <div>
+                            <h3 class="font-bold text-xl text-slate-800">Control de Repuestos y Almacenes</h3>
+                            <p class="text-xs text-slate-500">Integración directa con stock e inventario con simulador de código de barras/QR.</p>
+                        </div>
+                        <button onclick="simulateMaterialShortage()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-md self-start sm:self-auto">
+                            <i class="fa-solid fa-triangle-exclamation mr-1"></i> Simular Rotura de Stock
+                        </button>
+                    </div>
+
+                    <!-- Cuadrícula de Repuestos -->
+                    <div id="spares-grid-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                        <!-- Cargado dinámicamente -->
+                    </div>
+
+                    <!-- Módulo de Integración de Órdenes de Compra -->
+                    <div class="border border-slate-200 rounded-xl p-6 bg-white shadow-sm space-y-4">
+                        <h4 class="font-bold text-slate-800 text-sm">Órdenes de Compra de Suministros (Tasa de ITBMS 7.00% Aplicada)</h4>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs text-slate-500 min-w-[800px]">
+                                <thead class="bg-slate-50 text-slate-700 font-bold uppercase">
+                                    <tr>
+                                        <th class="p-3">ID Compra</th>
+                                        <th class="p-3">Proveedor Panamá</th>
+                                        <th class="p-3">Repuesto / Compatibilidad</th>
+                                        <th class="p-3">Monto Base</th>
+                                        <th class="p-3">ITBMS (7%)</th>
+                                        <th class="p-3">Total Bruto (USD)</th>
+                                        <th class="p-3">Vínculo OT</th>
+                                        <th class="p-3">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="purchase-orders-tbody" class="divide-y divide-slate-100 text-xs">
+                                    <!-- Dinámico -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. COSTOS & PRESUPUESTOS -->
+                <section id="module-costos" class="module-tab hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                        <div>
+                            <h3 class="font-bold text-xl text-slate-800">Contabilidad e Inversión de Mantenimiento</h3>
+                            <p class="text-xs text-slate-500">Audite costos reales de mano de obra y contratos. Valores financieros desglosados en tiempo real.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <select id="time-filter-costos" onchange="updateCostosModule()" class="text-xs p-2 border border-slate-300 rounded bg-white font-semibold focus:outline-none focus:border-blue-500">
+                                <option value="diario">Filtro Diario</option>
+                                <option value="semanal">Filtro Semanal</option>
+                                <option value="mensual" selected>Filtro Mensual</option>
+                                <option value="anual">Filtro Anual</option>
+                            </select>
+                            <button onclick="openBudgetComparisonModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center space-x-2 shadow-md">
+                                <i class="fa-solid fa-scale-balanced"></i>
+                                <span>Comparar Cotizaciones</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Gráfico de Inversión acumulada -->
+                        <div class="border border-slate-200 bg-white rounded-xl p-6 shadow-sm lg:col-span-2">
+                            <h4 class="font-bold text-slate-800 text-sm mb-4">Gasto Mensual por Equipo ($ USD)</h4>
+                            <div class="h-64">
+                                <canvas id="costsChart" class="w-full h-full"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Fichas de Consolidado Contable -->
+                        <div class="border border-slate-200 rounded-xl p-6 flex flex-col justify-between bg-white shadow-sm">
+                            <div class="space-y-4">
+                                <h4 class="font-bold text-slate-800 text-sm">Resumen Consolidado Panamá (Balboas/USD)</h4>
+                                <div class="space-y-2.5 text-xs">
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-500">Mano de Obra Directa</span>
+                                        <span class="font-bold text-slate-800" id="consolidated-labor">$0.00</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-500">Repuestos Adquiridos (ITBMS Base)</span>
+                                        <span class="font-bold text-slate-800" id="consolidated-spares">$0.00</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-500">Contratos Externos (Tornerías)</span>
+                                        <span class="font-bold text-slate-800" id="consolidated-externals">$9,150.00</span>
+                                    </div>
+                                    <div class="flex justify-between pt-2 border-t border-slate-100">
+                                        <span class="text-slate-800 font-bold">Subtotal Gravable</span>
+                                        <span class="font-bold text-slate-800" id="consolidated-subtotal">$0.00</span>
+                                    </div>
+                                    <div class="flex justify-between text-slate-600">
+                                        <span>Cálculo ITBMS (7%)</span>
+                                        <span class="font-bold" id="consolidated-itbms">$0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-200 flex justify-between items-center">
+                                <span class="text-sm font-bold text-slate-700">Total Acumulado Neto</span>
+                                <span class="text-xl font-extrabold text-blue-600" id="consolidated-total">$0.00 USD</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 6. REPORTES DE FALLA -->
+                <section id="module-fallas" class="module-tab hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold text-xl text-slate-800">Registro de Fallas y Eventos en Obra</h3>
+                            <p class="text-xs text-slate-500">Reporte de incidentes mecánicos, estructurales o hidráulicos de forma inmediata para el planificador.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Formulario de Falla -->
+                        <div class="border border-slate-200 rounded-xl p-6 bg-white shadow-sm">
+                            <h4 class="font-bold text-slate-800 text-sm mb-4">Reportar Incidente Físico</h4>
+                            <form id="failure-report-form" onsubmit="handleManualFailureSubmit(event)" class="space-y-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Equipo Afectado</label>
+                                    <select id="failure-asset-select" class="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none focus:border-blue-500" required>
+                                        <option value="Caterpillar 416">Caterpillar 416</option>
+                                        <option value="Caterpillar 320">Caterpillar 320</option>
+                                        <option value="Caterpillar D6">Caterpillar D6</option>
+                                        <option value="Caterpillar 950 GC">Caterpillar 950 GC</option>
+                                        <option value="Caterpillar CS11 GC">Caterpillar CS11 GC</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Gravedad</label>
+                                    <select id="failure-severity-select" class="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none focus:border-blue-500" required>
+                                        <option value="ALTA">Crítica (Detiene la Obra)</option>
+                                        <option value="MEDIA">Moderada (Bajo Rendimiento)</option>
+                                        <option value="BAJA">Leve (Requiere Ajuste Programado)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Descripción de Síntomas</label>
+                                    <textarea id="failure-desc-input" rows="4" class="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none focus:border-blue-500" placeholder="Ej: Fuga de aceite por el vástago del cilindro..." required></textarea>
+                                </div>
+                                <button type="submit" class="w-full bg-slate-900 text-white font-bold p-2.5 rounded-lg text-xs transition-all hover:bg-slate-800 shadow-md">
+                                    Enviar Reporte de Incidente
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Historial de Incidentes -->
+                        <div class="border border-slate-200 rounded-xl p-6 bg-white shadow-sm md:col-span-2 flex flex-col h-[400px]">
+                            <h4 class="font-bold text-slate-800 text-sm mb-4">Registro Histórico de Incidentes</h4>
+                            <div class="flex-1 overflow-y-auto pr-2">
+                                <ul id="failure-history-list" class="space-y-3">
+                                    <!-- Cargado dinámicamente -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 7. CALIDAD & AUDITORÍA -->
+                <section id="module-calidad" class="module-tab hidden space-y-6">
+                    <div class="border border-slate-200 rounded-xl p-6 bg-white shadow-sm space-y-6">
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-800">Aseguramiento de Calidad & Confiabilidad ISO 55000</h3>
+                            <p class="text-xs text-slate-500">Audite las reparaciones finalizadas, realice control de cambios técnicos y apruebe el cierre final de las OTs.</p>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs text-slate-500 min-w-[700px]">
+                                <thead class="bg-slate-50 text-slate-700 font-bold uppercase">
+                                    <tr>
+                                        <th class="p-3">ID OT</th>
+                                        <th class="p-3">Equipo</th>
+                                        <th class="p-3">Certificación Técnica de Calidad</th>
+                                        <th class="p-3">Auditor Supervisor</th>
+                                        <th class="p-3">Norma Aplicada</th>
+                                        <th class="p-3">Aprobación</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr>
+                                        <td class="p-3 font-bold text-slate-700">OT-101</td>
+                                        <td class="p-3">Caterpillar 416</td>
+                                        <td class="p-3">Análisis de vibraciones post-alineación dentro de límites ISO 10816.</td>
+                                        <td class="p-3">Ing. Abdiel Henriquez</td>
+                                        <td class="p-3">ISO 55001 - Cláusula 8.1</td>
+                                        <td class="p-3"><span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded">APROBADO</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3 font-bold text-slate-700">OT-102</td>
+                                        <td class="p-3">Caterpillar 320</td>
+                                        <td class="p-3">Prueba de estanqueidad de circuitos hidráulicos conforme. Torque verificado.</td>
+                                        <td class="p-3">Ing. Abdiel Henriquez</td>
+                                        <td class="p-3">ISO 14224 - Fiabilidad</td>
+                                        <td class="p-3"><span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded">APROBADO</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 8. BITÁCORA DE COMUNICACIÓN -->
+                <section id="module-comunicacion" class="module-tab hidden space-y-6">
+                    <div class="border border-slate-200 rounded-xl p-6 bg-white flex flex-col h-[500px] shadow-sm">
+                        <div class="border-b border-slate-200 pb-4 mb-4">
+                            <h3 class="font-bold text-lg text-slate-800">Bitácora de Comunicación de Obra</h3>
+                            <p class="text-xs text-slate-500">Canal directo entre Mantenimiento, Supervisor de Obra y Abastecimiento.</p>
+                        </div>
+                        
+                        <!-- Contenedor del Chat -->
+                        <div id="chat-messages-container" class="flex-1 overflow-y-auto space-y-4 pr-2">
+                            <!-- Mensajes fijos -->
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700">P</div>
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-xs font-bold text-slate-700">Supervisor de Proyecto (José)</span>
+                                        <span class="text-[10px] text-slate-400">Hoy 08:30 AM</span>
+                                    </div>
+                                    <div class="bg-slate-100 text-xs p-2.5 rounded-lg mt-1 text-slate-700 max-w-lg">
+                                        Estimados, ¿está agendada la ventana del Cargador CAT 950? Estamos listos en el patio de acopio del Corredor de Playas.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-3 justify-end text-right">
+                                <div class="order-2 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-700 ml-3">AH</div>
+                                <div class="order-1">
+                                    <div class="flex items-center justify-end space-x-2">
+                                        <span class="text-xs font-bold text-slate-700">Planificación (Abdiel Henriquez)</span>
+                                        <span class="text-[10px] text-slate-400">Hoy 08:42 AM</span>
+                                    </div>
+                                    <div class="bg-blue-600 text-white text-xs p-2.5 rounded-lg mt-1 text-left max-w-lg">
+                                        Hola José. El preventivo de las 2,500 horas está agendado para las 14:00 hrs de hoy. El equipo de lubricación móvil de Cardoze & Lindo ya está coordinado.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Formulario de Chat -->
+                        <div class="mt-4 pt-4 border-t border-slate-200 flex items-center space-x-3">
+                            <input id="chat-input" type="text" placeholder="Escribe una observación técnica en la bitácora..." class="flex-1 border border-slate-200 rounded-lg p-2.5 text-xs focus:outline-none focus:border-blue-500">
+                            <button onclick="sendChatMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm">
+                                Registrar Nota
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 9. BASE DE CONOCIMIENTO (Con sección técnica integrada) -->
+                <section id="module-kb" class="module-tab hidden space-y-6">
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        
+                        <!-- Columna izquierda: Manuales e Ingeniería de Mantenimiento -->
+                        <div class="xl:col-span-1 space-y-6">
+                            
+                            <!-- Botón para subir manuales -->
+                            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <h4 class="font-bold text-sm text-slate-800">Recursos y Manuales</h4>
+                                    <button onclick="toggleKbForm()" class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg text-xs font-bold flex items-center space-x-1 shadow-sm">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                                        <span>Subir Manual / Enlace</span>
+                                    </button>
+                                </div>
+                                
+                                <!-- Formulario de Subida -->
+                                <div id="kb-upload-form" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                                    <div class="space-y-2">
+                                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Nombre del Recurso</label>
+                                        <input id="kb-title" type="text" class="w-full p-2 border border-slate-200 rounded text-xs" placeholder="Manual de Torque CAT 320">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Tipo</label>
+                                        <select id="kb-type" onchange="handleKbTypeChange()" class="w-full p-2 border border-slate-200 rounded text-xs bg-white">
+                                            <option value="PDF">Documento PDF</option>
+                                            <option value="Word">Documento Word</option>
+                                            <option value="Enlace">Enlace Web (URL)</option>
+                                        </select>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Categoría</label>
+                                        <select id="kb-category" class="w-full p-2 border border-slate-200 rounded text-xs bg-white">
+                                            <option value="Manual de Operación">Manual de Operación</option>
+                                            <option value="Ficha Técnica">Ficha Técnica</option>
+                                            <option value="Lección Aprendida">Lección Aprendida</option>
+                                        </select>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Vincular Maquinaria</label>
+                                        <select id="kb-linked-asset" class="w-full p-2 border border-slate-200 rounded text-xs bg-white">
+                                            <option value="">-- Sin Vincular --</option>
+                                            <option value="CAT-416-2026">CAT 416</option>
+                                            <option value="CAT-320-2026">CAT 320</option>
+                                            <option value="CAT-D6-2026">CAT D6</option>
+                                            <option value="CAT-950-2026">CAT 950 GC</option>
+                                            <option value="CAT-CS11-2026">CAT CS11 GC</option>
+                                        </select>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Descripción</label>
+                                        <input id="kb-desc" type="text" class="w-full p-2 border border-slate-200 rounded text-xs" placeholder="Valores de tolerancia hidráulica...">
+                                    </div>
+                                    <div id="kb-file-container" class="space-y-2">
+                                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Archivo de mi PC</label>
+                                        <input id="kb-file-input" type="file" accept=".pdf,.doc,.docx" class="w-full text-xs">
+                                    </div>
+                                    <div id="kb-url-container" class="space-y-2 hidden">
+                                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Enlace URL</label>
+                                        <input id="kb-url-input" type="url" class="w-full p-2 border border-slate-200 rounded text-xs" placeholder="https://cat.com/manuals">
+                                    </div>
+                                    <div class="flex justify-end space-x-2 pt-2">
+                                        <button onclick="handleKbSubmit()" class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold">Guardar</button>
+                                    </div>
+                                </div>
+
+                                <!-- Lista de Manuales -->
+                                <div class="space-y-3 overflow-y-auto max-h-[350px] pr-1" id="kb-resources-container">
+                                    <!-- Dinámico -->
+                                </div>
+                            </div>
+
+                            <!-- Bloque Conceptual de Ingeniería -->
+                            <div class="bg-slate-900 text-slate-100 border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
+                                <h4 class="font-bold text-sm text-blue-400 uppercase tracking-wider"><i class="fa-solid fa-graduation-cap"></i> Metodología y Fiabilidad</h4>
+                                <div class="space-y-3 text-xs">
+                                    <button onclick="showKbConcept('efectividad')" class="w-full text-left p-2.5 rounded bg-slate-800 hover:bg-slate-700 transition-all border-l-4 border-blue-500 font-bold">
+                                        1. Efectividad y Eficiencia
+                                    </button>
+                                    <button onclick="showKbConcept('costos')" class="w-full text-left p-2.5 rounded bg-slate-800 hover:bg-slate-700 transition-all border-l-4 border-emerald-500 font-bold">
+                                        2. Análisis del Costo Técnico
+                                    </button>
+                                    <button onclick="showKbConcept('confiabilidad')" class="w-full text-left p-2.5 rounded bg-slate-800 hover:bg-slate-700 transition-all border-l-4 border-amber-500 font-bold">
+                                        3. Confiabilidad y Disponibilidad
+                                    </button>
+                                    <button onclick="showKbConcept('herramientas')" class="w-full text-left p-2.5 rounded bg-slate-800 hover:bg-slate-700 transition-all border-l-4 border-purple-500 font-bold">
+                                        4. Interpretación de Indicadores
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Columna derecha: Visor Técnico Interactivo (Lector in-situ) -->
+                        <div class="xl:col-span-2 space-y-6">
+                            <div class="border border-slate-200 rounded-xl p-6 bg-white shadow-sm min-h-[500px] flex flex-col" id="kb-viewer-panel">
+                                <div class="flex-1 flex flex-col justify-center items-center text-center text-slate-400">
+                                    <i class="fa-solid fa-book-open text-5xl mb-4 text-slate-300 animate-bounce"></i>
+                                    <p class="font-bold text-sm text-slate-700">Visor de Documentos de Obra</p>
+                                    <p class="text-xs text-slate-500 max-w-md mt-1">Seleccione un manual técnico de la flota o haga clic en uno de los conceptos de ingeniería del panel izquierdo para cargar la información técnica directamente aquí.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL VINCULAR DOCUMENTO DESDE EQUIPOS (PDF, WORD, URL, PC) -->
+    <div id="equipment-doc-modal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center hidden z-50">
+        <div class="bg-white border border-slate-200 rounded-xl max-w-lg w-full p-6 space-y-5">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <h3 class="font-bold text-lg text-slate-800" id="eq-doc-modal-title">Subir / Vincular Documento Técnico</h3>
+                <button onclick="closeUploadDocModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="space-y-4 text-xs">
+                <input type="hidden" id="eq-doc-active-id">
+                
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Título del Documento</label>
+                    <input id="eq-doc-title" type="text" class="w-full p-2 border border-slate-200 rounded-lg" placeholder="Ej: Ficha de Tolerancias de Cilindros">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Categoría del Recurso</label>
+                    <select id="eq-doc-category" class="w-full p-2 border border-slate-200 rounded-lg bg-white">
+                        <option value="Manual de Operación">Manual de Operación / Taller</option>
+                        <option value="Ficha Técnica">Ficha Técnica de Componente</option>
+                        <option value="Lección Aprendida">Lección Aprendida / Apunte</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Origen del Documento</label>
+                    <select id="eq-doc-source-type" onchange="handleEqDocSourceChange()" class="w-full p-2 border border-slate-200 rounded-lg bg-white">
+                        <option value="PC">Subir desde mi PC (PDF o Word)</option>
+                        <option value="URL">Dirección Web (URL / Enlace)</option>
+                    </select>
+                </div>
+
+                <!-- Input para Archivos Locales (PC) -->
+                <div id="eq-doc-pc-container" class="space-y-1">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Seleccionar Archivo PDF/Word</label>
+                    <div class="border-2 border-dashed border-slate-200 rounded-lg p-4 text-center hover:bg-slate-50 relative cursor-pointer">
+                        <input type="file" id="eq-doc-file-input" accept=".pdf,.doc,.docx" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                        <i class="fa-solid fa-file-circle-plus text-2xl text-blue-500 mb-1"></i>
+                        <p class="font-semibold text-slate-700" id="eq-doc-pc-label">Haz clic para buscar en tu PC</p>
+                    </div>
+                </div>
+
+                <!-- Input para Enlaces (URL) -->
+                <div id="eq-doc-url-container" class="space-y-1 hidden">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Enlace de Internet (URL)</label>
+                    <input id="eq-doc-url-input" type="url" class="w-full p-2 border border-slate-200 rounded-lg" placeholder="https://cat.com/manual-servicio-416">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Descripción Breve</label>
+                    <textarea id="eq-doc-desc" rows="2" class="w-full p-2 border border-slate-200 rounded-lg" placeholder="Breve nota del contenido técnico..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+                <button onclick="closeUploadDocModal()" class="px-4 py-2 border border-slate-200 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-600">Cancelar</button>
+                <button onclick="handleEqDocSubmit()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-md">Procesar y Vincular</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL REGISTRO DE NUEVO EQUIPO -->
+    <div id="asset-modal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center hidden z-50">
+        <div class="bg-white border border-slate-200 rounded-xl max-w-2xl w-full p-6 space-y-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <h3 class="font-bold text-lg text-slate-800">Registrar Nuevo Activo en Flota</h3>
+                <button onclick="closeAssetModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleNewAssetSubmit(event)" class="space-y-4 text-xs">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nombre Comercial</label>
+                        <input id="new-asset-name" type="text" class="w-full p-2 border border-slate-200 rounded-lg" required placeholder="Ej: Caterpillar D6T (Bulldozer)">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Código de Activo Interno</label>
+                        <input id="new-asset-code" type="text" class="w-full p-2 border border-slate-200 rounded-lg" required placeholder="Ej: CAT-D6-2026">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Modelo</label>
+                        <input id="new-asset-model" type="text" class="w-full p-2 border border-slate-200 rounded-lg" required placeholder="D6">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Serie</label>
+                        <input id="new-asset-serial" type="text" class="w-full p-2 border border-slate-200 rounded-lg" required placeholder="CAT00D6TX9921">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Año</label>
+                        <input id="new-asset-year" type="number" class="w-full p-2 border border-slate-200 rounded-lg" required placeholder="2023">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Horómetro Inicial</label>
+                        <input id="new-asset-hours" type="number" step="0.1" class="w-full p-2 border border-slate-200 rounded-lg" required placeholder="120.5">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Proyecto Asignado</label>
+                        <input id="new-asset-project" type="text" class="w-full p-2 border border-slate-200 rounded-lg" required placeholder="Ej: Urbanización Sabanitas">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Fotografía del Equipo (URL o Demo)</label>
+                        <input id="new-asset-photo-input" type="text" class="w-full p-2 border border-slate-200 rounded-lg" placeholder="https://images.unsplash.com/...">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="button" onclick="setDemoPhotoForAsset()" class="bg-slate-100 hover:bg-slate-200 w-full p-2 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700">Usar Foto Demo (Bulldozer)</button>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeAssetModal()" class="px-4 py-2 border border-slate-200 hover:bg-slate-100 rounded-lg font-bold text-slate-600">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md">Registrar Equipo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE VALIDACIÓN Y EXTRACCIÓN DE MANUAL -->
+    <div id="manual-modal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center hidden z-50">
+        <div class="bg-white border border-slate-200 rounded-xl max-w-2xl w-full p-6 space-y-6">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <h3 id="manual-val-title" class="font-bold text-lg text-slate-800">Validación de Manual de Fábrica</h3>
+                <button onclick="closeManualModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="space-y-4 text-xs">
+                <p class="text-slate-500">Este módulo valida los parámetros del equipo ingresados por el técnico con las directrices oficiales del fabricante Caterpillar.</p>
+                
+                <div class="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:bg-slate-50 transition-all cursor-pointer">
+                    <i class="fa-solid fa-file-pdf text-3xl text-red-500 mb-2"></i>
+                    <p class="font-semibold text-slate-700">Arrastre aquí el Manual PDF de Fábrica</p>
+                    <p class="text-[10px] text-slate-400 mt-1">Soporta manuales Caterpillar oficiales (Mantenimiento preventivo)</p>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <div class="flex-1 h-px bg-slate-100"></div>
+                    <span class="text-slate-400 font-bold">O</span>
+                    <div class="flex-1 h-px bg-slate-100"></div>
+                </div>
+
+                <button onclick="triggerAiManualExtraction()" type="button" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold p-3 rounded-lg flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-blue-600"></i>
+                    <span>Escanear y Extraer Datos de Fábrica</span>
+                </button>
+
+                <div id="manual-val-results" class="hidden border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-3">
+                    <h4 class="font-bold text-slate-700 flex items-center space-x-2">
+                        <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                        <span>Parámetros Oficiales Extraídos:</span>
+                    </h4>
+                    <div class="grid grid-cols-2 gap-4 text-xs">
+                        <div><span class="text-slate-400 font-medium">Lubricante Motor:</span> <span class="font-bold text-slate-800" id="official-lube">SAE 15W-40</span></div>
+                        <div><span class="text-slate-400 font-medium">Aceite Hidráulico:</span> <span class="font-bold text-slate-800" id="official-hydraulic">SAE 10W</span></div>
+                        <div><span class="text-slate-400 font-medium">Filtro de Aceite:</span> <span class="font-bold text-slate-800" id="official-filter">CAT 1R-1808</span></div>
+                        <div><span class="text-slate-400 font-medium">Intervalo de Cambio:</span> <span class="font-bold text-slate-800">250 Horas</span></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end">
+                <button onclick="closeManualModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GALERÍA FOTOGRÁFICA -->
+    <div id="image-modal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center hidden z-50">
+        <div class="bg-white border border-slate-200 rounded-xl max-w-2xl w-full p-6 space-y-6">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <h3 class="font-bold text-lg text-slate-800">Galería de Imágenes del Activo</h3>
+                <button onclick="closeImageModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="space-y-4 text-xs">
+                <!-- Dropzone de imagen local -->
+                <div class="border-2 border-dashed border-slate-200 hover:bg-slate-50 transition-all rounded-xl p-6 text-center cursor-pointer relative">
+                    <input type="file" id="asset-image-uploader" accept="image/*" onchange="handleImageUpload(event)" class="absolute inset-0 opacity-0 cursor-pointer">
+                    <i class="fa-solid fa-camera-retro text-2xl text-slate-400 mb-2"></i>
+                    <p class="font-bold text-slate-700">Arrastre o seleccione fotografías personales desde su PC</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Soporta JPG, PNG, WEBP, JPEG</p>
+                </div>
+
+                <!-- Input de URL web -->
+                <div class="flex space-x-2">
+                    <input id="asset-image-url-input" type="url" class="flex-1 p-2 border border-slate-200 rounded-lg text-xs" placeholder="O pegue el enlace directo de una foto web...">
+                    <button onclick="handleImageUrlUpload()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-1.5 rounded-lg text-xs">Cargar Foto</button>
+                </div>
+
+                <!-- Galería de imágenes actual del activo -->
+                <div>
+                    <h4 class="font-bold text-slate-700 mb-2">Administrar Fotos del Activo:</h4>
+                    <p class="text-[10px] text-slate-400 mb-3">La primera imagen es la principal por defecto. Puedes elegir cualquier fotografía para que se muestre en el marco izquierdo de la tarjeta del equipo.</p>
+                    <div id="active-gallery-container" class="grid grid-cols-3 gap-4">
+                        <!-- Dinámico -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end pt-3 border-t border-slate-100">
+                <button onclick="closeImageModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-md">Finalizar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NUEVA / EDITAR OT -->
+    <div id="ot-modal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center hidden z-50 no-print">
+        <div class="bg-white border border-slate-200 rounded-xl max-w-3xl w-full p-6 space-y-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <h3 id="modal-ot-title" class="font-bold text-lg text-slate-800">Crear Nueva Orden de Trabajo</h3>
+                <button onclick="closeOtModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form id="ot-form" onsubmit="handleOtFormSubmit(event)" class="space-y-4 text-xs">
+                <input type="hidden" id="form-ot-id">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Equipo de Obra</label>
+                        <select id="form-ot-asset" class="w-full p-2.5 border border-slate-200 rounded-lg bg-white" required>
+                            <option value="Caterpillar 416">Caterpillar 416 (Retroexcavadora)</option>
+                            <option value="Caterpillar 320">Caterpillar 320 (Excavadora Hidráulica)</option>
+                            <option value="Caterpillar D6">Caterpillar D6 (Bulldozer)</option>
+                            <option value="Caterpillar 950 GC">Caterpillar 950 GC (Cargador Frontal)</option>
+                            <option value="Caterpillar CS11 GC">Caterpillar CS11 GC (Rodillo Compactador)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Tipo de Mantenimiento</label>
+                        <select id="form-ot-type" class="w-full p-2.5 border border-slate-200 rounded-lg bg-white" required>
+                            <option value="Preventivo">Preventivo (Programado por Horómetro)</option>
+                            <option value="Correctivo">Correctivo (Reparación de Avería)</option>
+                            <option value="Emergencia">Emergencia / Urgente</option>
+                            <option value="Predictivo">Predictivo (Análisis de Vibración/Aceite)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Prioridad</label>
+                        <select id="form-ot-priority" class="w-full p-2.5 border border-slate-200 rounded-lg bg-white" required>
+                            <option value="Baja">Baja</option>
+                            <option value="Media">Media</option>
+                            <option value="Alta">Alta / Emergencia</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Estado</label>
+                        <select id="form-ot-status" class="w-full p-2.5 border border-slate-200 rounded-lg bg-white" required>
+                            <option value="Abierta">Abierta</option>
+                            <option value="En Progreso">En Progreso</option>
+                            <option value="Cerrada">Cerrada</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Técnico Responsable</label>
+                        <input id="form-ot-tech" type="text" class="w-full p-2.5 border border-slate-200 rounded-lg" required placeholder="Ej: Abdiel Henriquez">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Costo Estimado de Repuestos ($ USD)</label>
+                        <input id="form-ot-cost-parts" type="number" step="0.01" class="w-full p-2.5 border border-slate-200 rounded-lg" required placeholder="Ej: 145.00">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Costo Mano de Obra ($ USD)</label>
+                        <input id="form-ot-cost-labor" type="number" step="0.01" class="w-full p-2.5 border border-slate-200 rounded-lg" required placeholder="Ej: 90.00">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Descripción del Trabajo / Diagnóstico Técnico</label>
+                    <textarea id="form-ot-desc" rows="3" class="w-full p-2.5 border border-slate-200 rounded-lg" required placeholder="Describa las actividades requeridas..."></textarea>
+                </div>
+
+                <!-- Fotografías antes y después -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Fotografía de Registro (Antes)</label>
+                        <input id="form-ot-img" type="text" class="w-full p-2.5 border border-slate-200 rounded-lg" placeholder="Enlace URL o usa Demo">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="button" onclick="loadOtPlaceholderImage()" class="bg-slate-100 hover:bg-slate-200 font-bold p-2.5 rounded-lg border border-slate-200 w-full text-center">Usar Imagen Demo (Antes)</button>
+                    </div>
+                </div>
+
+                <!-- Check-list interactivo de conformidad -->
+                <div class="border border-slate-200 rounded-lg p-4 bg-slate-50/50">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="font-bold text-[10px] text-slate-600 uppercase tracking-wider">Checklist de Conformidad (ISO 55000)</h4>
+                        <button type="button" onclick="addChecklistItem()" class="text-blue-600 hover:text-blue-800 text-[11px] font-bold"><i class="fa-solid fa-plus"></i> Agregar Tarea</button>
+                    </div>
+                    <ul id="modal-checklist-container" class="space-y-3">
+                        <!-- Tareas Dinámicas -->
+                    </ul>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeOtModal()" class="px-4 py-2 border border-slate-200 hover:bg-slate-100 rounded-lg font-bold text-slate-600">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-white shadow-md">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DETALLE / IMPRESIÓN DE OT -->
+    <div id="print-ot-modal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center hidden z-50">
+        <div class="bg-white border border-slate-200 rounded-xl max-w-3xl w-full p-8 space-y-6 max-h-[90vh] overflow-y-auto" id="printArea">
+            
+            <div class="flex justify-between items-start pb-4 border-b border-slate-200">
+                <div>
+                    <h2 class="font-extrabold text-2xl text-slate-800 tracking-tight">MULTISERVICIOS HENRIQUEZ</h2>
+                    <p class="text-xs text-slate-500">Panamá, República de Panamá • Soporte Técnico de Flota</p>
+                </div>
+                <div class="text-right">
+                    <span id="print-ot-code" class="text-lg font-bold text-slate-800 bg-slate-100 px-3 py-1.5 rounded-lg">OT-101</span>
+                    <p class="text-[11px] text-slate-400 mt-2">Supervisor: Ing. Abdiel Henriquez</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-6 text-xs">
+                <div>
+                    <p class="font-bold text-slate-400 uppercase tracking-wider mb-1">Detalles del Activo</p>
+                    <p class="text-sm font-bold text-slate-800" id="print-ot-asset">Caterpillar 416</p>
+                    <p class="text-slate-500 mt-1">Ubicación de Obra: Sector Sabanitas, Colón</p>
+                </div>
+                <div>
+                    <p class="font-bold text-slate-400 uppercase tracking-wider mb-1">Información de Mantenimiento</p>
+                    <p class="text-sm font-bold text-slate-800" id="print-ot-type">Correctivo / Emergencia</p>
+                    <p class="text-slate-500 mt-1">Prioridad: <span id="print-ot-priority" class="font-bold text-red-600">Alta</span></p>
+                </div>
+            </div>
+
+            <div class="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Descripción del Trabajo Ejecutado</p>
+                <p class="text-xs text-slate-700 leading-relaxed" id="print-ot-desc">Diagnóstico y cambio de filtros.</p>
+            </div>
+
+            <!-- Registro Fotográfico -->
+            <div id="print-ot-image-section" class="hidden">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Evidencia Fotográfica (Inspección de Obra)</p>
+                <img id="print-ot-image" src="" class="h-44 w-full object-cover rounded-xl border border-slate-100">
+            </div>
+
+            <!-- Checklist en la Impresión -->
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Checklist de Conformidad (Ganchos / Equis y Observaciones)</p>
+                <table class="w-full text-left text-xs border-collapse border border-slate-200">
+                    <thead>
+                        <tr class="bg-slate-50">
+                            <th class="p-2 border border-slate-200">Tarea de Verificación</th>
+                            <th class="p-2 border border-slate-200 w-24 text-center">Estado</th>
+                            <th class="p-2 border border-slate-200">Observaciones de Calidad</th>
+                        </tr>
+                    </thead>
+                    <tbody id="print-ot-checklist-tbody">
+                        <!-- Dinámico -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Costos Detallados -->
+            <div class="pt-4 border-t border-slate-100 text-xs">
+                <p class="font-bold text-slate-400 uppercase tracking-wider mb-2">Desglose Financiero (Moneda de Curso Legal: USD)</p>
+                <div class="grid grid-cols-3 gap-4 text-slate-600">
+                    <div><span>Repuestos/Materiales:</span> <strong class="text-slate-800" id="print-ot-parts-cost">$0.00</strong></div>
+                    <div><span>Mano de Obra Certificada:</span> <strong class="text-slate-800" id="print-ot-labor-cost">$0.00</strong></div>
+                    <div><span>ITBMS de Ley (7%):</span> <strong class="text-slate-800" id="print-ot-itbms-cost">$0.00</strong></div>
+                </div>
+                <div class="mt-2 text-sm font-bold text-slate-800 flex justify-end">
+                    <span>Monto Total de Orden: &nbsp;</span>
+                    <span class="text-blue-600" id="print-ot-total-cost">$0.00 USD</span>
+                </div>
+            </div>
+
+            <!-- Firmas Digitales -->
+            <div class="pt-8 border-t border-slate-100 grid grid-cols-2 gap-8 text-xs">
+                <div class="text-center">
+                    <p class="font-bold text-slate-800">Abdiel Henriquez</p>
+                    <div class="h-12 border-b border-slate-200 flex items-center justify-center italic text-slate-300 font-serif">Firmado Digitalmente (AH)</div>
+                    <p class="text-[10px] text-slate-400 mt-1">Supervisor de Planificación</p>
+                </div>
+                <div class="text-center">
+                    <p class="font-bold text-slate-800">Nahin Ceballos</p>
+                    <div class="h-12 border-b border-slate-200 flex items-center justify-center italic text-slate-300 font-serif">Aprobación Técnica (ISO 55000)</div>
+                    <p class="text-[10px] text-slate-400 mt-1">Auditor de Calidad y Fiabilidad</p>
+                </div>
+            </div>
+
+            <!-- Botones de Control (Ocultos en Impresión) -->
+            <div class="flex justify-end space-x-3 pt-6 border-t border-slate-200 no-print">
+                <button onclick="closePrintOtModal()" class="px-4 py-2 border border-slate-200 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-600">Cerrar</button>
+                <button onclick="exportOtToTxt()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 rounded-lg text-xs font-bold text-white flex items-center space-x-1">
+                    <i class="fa-solid fa-file-arrow-down"></i> <span>Exportar TXT</span>
+                </button>
+                <button onclick="window.print()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-bold text-white flex items-center space-x-1">
+                    <i class="fa-solid fa-print"></i> <span>Imprimir / Guardar PDF</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE COMPARACIÓN DE PRESUPUESTOS -->
+    <div id="comparison-modal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center hidden z-50">
+        <div class="bg-white border border-slate-200 rounded-xl max-w-3xl w-full p-6 space-y-6">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <h3 class="font-bold text-lg text-slate-800">Comparador de Presupuestos de Distribuidores Autorizados (ITBMS Incluido)</h3>
+                <button onclick="closeBudgetComparisonModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <!-- CARDOZE & LINDO -->
+                <div class="border border-slate-200 rounded-lg p-4 bg-white hover:border-blue-300 transition-all">
+                    <h4 class="font-bold text-sm text-slate-800">Cardoze & Lindo</h4>
+                    <p class="text-[10px] text-blue-600 font-semibold mb-2">Distribuidor Caterpillar Oficial</p>
+                    <ul class="space-y-1.5 text-slate-500 mb-4">
+                        <li>• Filtro Aceite CAT: $45.00</li>
+                        <li>• Manguera Hidráulica: $120.00</li>
+                        <li>• Rodillo de Apoyo Mack: $195.00</li>
+                        <li class="pt-1.5 border-t border-slate-100">• Subtotal: $360.00</li>
+                        <li>• ITBMS (7%): $25.20</li>
+                    </ul>
+                    <div class="pt-3 border-t border-slate-100 flex justify-between items-center">
+                        <span class="text-xs font-bold">Total Neto:</span>
+                        <span class="font-extrabold text-sm text-slate-800">$385.20 USD</span>
+                    </div>
+                </div>
+
+                <!-- COPAMA -->
+                <div class="border border-slate-200 rounded-lg p-4 bg-white hover:border-blue-300 transition-all">
+                    <h4 class="font-bold text-sm text-slate-800">COPAMA</h4>
+                    <p class="text-[10px] text-slate-500 font-semibold mb-2">Multimarca Heavy Equipment</p>
+                    <ul class="space-y-1.5 text-slate-500 mb-4">
+                        <li>• Filtro Aceite Equivalente: $38.00</li>
+                        <li>• Manguera Reforzada: $105.00</li>
+                        <li>• Rodillo Equivalente Mack: $175.00</li>
+                        <li class="pt-1.5 border-t border-slate-100">• Subtotal: $318.00</li>
+                        <li>• ITBMS (7%): $22.26</li>
+                    </ul>
+                    <div class="pt-3 border-t border-slate-100 flex justify-between items-center">
+                        <span class="text-xs font-bold">Total Neto:</span>
+                        <span class="font-extrabold text-sm text-slate-800">$340.26 USD</span>
+                    </div>
+                </div>
+
+                <!-- GRUPO TOVA -->
+                <div class="border border-slate-200 rounded-lg p-4 bg-white hover:border-blue-300 transition-all">
+                    <h4 class="font-bold text-sm text-slate-800">Grupo Tova</h4>
+                    <p class="text-[10px] text-emerald-600 font-semibold mb-2">Mejor Opción Logística</p>
+                    <ul class="space-y-1.5 text-slate-500 mb-4">
+                        <li>• Filtro Premium: $42.00</li>
+                        <li>• Manguera Industrial: $110.00</li>
+                        <li>• Rodillo Alternativo Mack: $180.00</li>
+                        <li class="pt-1.5 border-t border-slate-100">• Subtotal: $332.00</li>
+                        <li>• ITBMS (7%): $23.24</li>
+                    </ul>
+                    <div class="pt-3 border-t border-slate-100 flex justify-between items-center">
+                        <span class="text-xs font-bold">Total Neto:</span>
+                        <span class="font-extrabold text-sm text-emerald-600">$355.24 USD *</span>
+                    </div>
+                </div>
+            </div>
+
+            <p class="text-[11px] text-slate-400 italic">* Grupo Tova ofrece flete libre de costo directo hasta el patio de talleres de Multiservicios Henriquez en Colón.</p>
+
+            <div class="flex justify-end pt-4 border-t border-slate-100">
+                <button onclick="closeBudgetComparisonModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIC SYSTEM JAVASCRIPT -->
+    <script>
+        // CONFIGURACIÓN DE BASE DE DATOS LOCAL SINTÉTICA (STATE) - 5 EQUIPOS, 5 OTs, 5 POs
+        let state = {
+            usuario: {
+                nombre: "Abdiel Henriquez",
+                rol: "Administrador"
+            },
+            equipos: [
+                {
+                    id: "CAT-416-2026",
+                    name: "Caterpillar 416 (Retroexcavadora)",
+                    brand: "Caterpillar",
+                    model: "416",
+                    serial: "CAT00416H77301",
+                    year: 2021,
+                    hours: 4120.4,
+                    status: "OPERATIVO",
+                    location: "Sector Chame, Panamá Oeste",
+                    project: "Ampliación Vial Panamá-Sajalices",
+                    responsible: "Ing. Abdiel Henriquez",
+                    acquisitionDate: "12/03/2021",
+                    usefulLife: "10 años",
+                    warranty: "Hasta 5,000 hrs",
+                    provider: "Cardoze & Lindo",
+                    photo: "https://images.unsplash.com/photo-1579684389782-64d84b5e905d?auto=format&fit=crop&q=80&w=400",
+                    specs: {
+                        lubricants: "SAE 15W-40 Premium",
+                        coolantCapacity: "19 L",
+                        hydraulicOil: "SAE 10W Hydro",
+                        torqueHead: "150 Nm",
+                        airFilter: "CAT 1R-1808"
+                    },
+                    gallery: [
+                        "https://images.unsplash.com/photo-1579684389782-64d84b5e905d?auto=format&fit=crop&q=80&w=400"
+                    ]
+                },
+                {
+                    id: "CAT-320-2026",
+                    name: "Caterpillar 320 (Excavadora)",
+                    brand: "Caterpillar",
+                    model: "320",
+                    serial: "CAT00320EX88210",
+                    year: 2022,
+                    hours: 6180.2,
+                    status: "OPERATIVO",
+                    location: "Colón, Puerto Balboa",
+                    project: "Desarrollo de Terminal Portuaria",
+                    responsible: "Ing. Abdiel Henriquez",
+                    acquisitionDate: "18/06/2022",
+                    usefulLife: "12 años",
+                    warranty: "Hasta 6,000 hrs",
+                    provider: "Cardoze & Lindo",
+                    photo: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=400",
+                    specs: {
+                        lubricants: "SAE 15W-40 Ultra",
+                        coolantCapacity: "28 L",
+                        hydraulicOil: "SAE 10W Cat Gold",
+                        torqueHead: "190 Nm",
+                        airFilter: "CAT 1R-0716"
+                    },
+                    gallery: [
+                        "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=400"
+                    ]
+                },
+                {
+                    id: "CAT-D6-2026",
+                    name: "Caterpillar D6 (Bulldozer)",
+                    brand: "Caterpillar",
+                    model: "D6",
+                    serial: "CAT00D6DO99212",
+                    year: 2020,
+                    hours: 7940.1,
+                    status: "OPERATIVO",
+                    location: "Sabanitas, Colón",
+                    project: "Urbanización de Vías de Acceso",
+                    responsible: "Ing. Abdiel Henriquez",
+                    acquisitionDate: "05/01/2020",
+                    usefulLife: "15 años",
+                    warranty: "Vencida",
+                    provider: "COPAMA",
+                    photo: "https://images.unsplash.com/photo-1541625602330-2277a4c4b28d?auto=format&fit=crop&q=80&w=400",
+                    specs: {
+                        lubricants: "SAE 15W-40 Heavy Duty",
+                        coolantCapacity: "34 L",
+                        hydraulicOil: "SAE 10W Heavy Hydro",
+                        torqueHead: "220 Nm",
+                        airFilter: "CAT 1R-1808"
+                    },
+                    gallery: [
+                        "https://images.unsplash.com/photo-1541625602330-2277a4c4b28d?auto=format&fit=crop&q=80&w=400"
+                    ]
+                },
+                {
+                    id: "CAT-950-2026",
+                    name: "Caterpillar 950 GC (Cargador)",
+                    brand: "Caterpillar",
+                    model: "950 GC",
+                    serial: "CAT00950LO22109",
+                    year: 2023,
+                    hours: 2410.8,
+                    status: "OPERATIVO",
+                    location: "Vía España, Panamá",
+                    project: "Metro Línea 3",
+                    responsible: "Ing. Abdiel Henriquez",
+                    acquisitionDate: "10/02/2023",
+                    usefulLife: "10 años",
+                    warranty: "Hasta 4,000 hrs",
+                    provider: "Cardoze & Lindo",
+                    photo: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&q=80&w=400",
+                    specs: {
+                        lubricants: "SAE 15W-40 Elite",
+                        coolantCapacity: "30 L",
+                        hydraulicOil: "SAE 10W Extreme",
+                        torqueHead: "180 Nm",
+                        airFilter: "CAT 1P-7360"
+                    },
+                    gallery: [
+                        "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&q=80&w=400"
+                    ]
+                },
+                {
+                    id: "CAT-CS11-2026",
+                    name: "Caterpillar CS11 (Rodillo Comp.)",
+                    brand: "Caterpillar",
+                    model: "CS11 GC",
+                    serial: "CAT00CS11RC77201",
+                    year: 2024,
+                    hours: 1890.3,
+                    status: "OPERATIVO",
+                    location: "Chorrera, Panamá Oeste",
+                    project: "Pavimentación Autopista Arraiján",
+                    responsible: "Ing. Abdiel Henriquez",
+                    acquisitionDate: "15/01/2024",
+                    usefulLife: "8 años",
+                    warranty: "Hasta 3,000 hrs",
+                    provider: "Grupo Tova",
+                    photo: "https://images.unsplash.com/photo-1579684275623-00910f73315c?auto=format&fit=crop&q=80&w=400",
+                    specs: {
+                        lubricants: "SAE 15W-40 Standard",
+                        coolantCapacity: "22 L",
+                        hydraulicOil: "SAE 10W Standard",
+                        torqueHead: "160 Nm",
+                        airFilter: "CAT 1R-0714"
+                    },
+                    gallery: [
+                        "https://images.unsplash.com/photo-1579684275623-00910f73315c?auto=format&fit=crop&q=80&w=400"
+                    ]
+                }
+            ],
+            // EXACTAMENTE 5 ÓRDENES DE TRABAJO (Fichas activas)
+            ots: [
+                {
+                    id: "OT-101",
+                    asset: "Caterpillar 416 (Retroexcavadora)",
+                    type: "Preventivo",
+                    priority: "Media",
+                    status: "Abierta",
+                    desc: "Mantenimiento programado de las 4,250 horas. Reemplazo de filtros de aceite de motor y lubricación del sistema.",
+                    date: "14/07/2026",
+                    tech: "Abdiel Henriquez",
+                    costParts: 245.00,
+                    costLabor: 120.00,
+                    image: "https://images.unsplash.com/photo-1579684389782-64d84b5e905d?auto=format&fit=crop&q=80&w=400",
+                    checklist: [
+                        { id: 1, task: "Verificar nivel de aceite de cárter", completed: "check", observation: "Nivel óptimo" },
+                        { id: 2, task: "Inspeccionar empaquetadura de filtro", completed: "check", observation: "Sin fisuras" },
+                        { id: 3, task: "Sustituir filtro CAT 1R-1808", completed: "pending", observation: "A la espera de colocación de repuesto" }
+                    ]
+                },
+                {
+                    id: "OT-102",
+                    asset: "Caterpillar 320 (Excavadora)",
+                    type: "Predictivo",
+                    priority: "Alta",
+                    status: "En Progreso",
+                    desc: "Análisis termográfico del bloque de válvulas hidráulico ante sospecha de sobrecalentamiento intermitente.",
+                    date: "15/07/2026",
+                    tech: "Abdiel Henriquez",
+                    costParts: 320.00,
+                    costLabor: 180.00,
+                    image: "",
+                    checklist: [
+                        { id: 1, task: "Ejecutar termografía en puerto de alta presión", completed: "check", observation: "Conforme, 45 grados" },
+                        { id: 2, task: "Verificar torque de mangueras primarias", completed: "cross", observation: "Holgura detectada en acople de bomba" }
+                    ]
+                },
+                {
+                    id: "OT-103",
+                    asset: "Caterpillar D6 (Bulldozer)",
+                    type: "Correctivo",
+                    priority: "Baja",
+                    status: "Cerrada",
+                    desc: "Cambio de correa del alternador desgastada detectada en inspección diaria.",
+                    date: "10/07/2026",
+                    tech: "Mec. Carlos Pérez",
+                    costParts: 85.00,
+                    costLabor: 60.00,
+                    image: "",
+                    checklist: [
+                        { id: 1, task: "Retirar correa agrietada", completed: "check", observation: "Desgaste severo" },
+                        { id: 2, task: "Calibrar tensión de correa nueva", completed: "check", observation: "Tensión nominal" }
+                    ]
+                },
+                {
+                    id: "OT-104",
+                    asset: "Caterpillar 950 GC (Cargador)",
+                    type: "Preventivo",
+                    priority: "Media",
+                    status: "Cerrada",
+                    desc: "Sustitución de filtro de aire de cabina y soplado del sistema primario.",
+                    date: "12/07/2026",
+                    tech: "Mec. Luis Araúz",
+                    costParts: 150.00,
+                    costLabor: 80.00,
+                    image: "",
+                    checklist: [
+                        { id: 1, task: "Reemplazo de elemento filtrante", completed: "check", observation: "Saturación al 90%" },
+                        { id: 2, task: "Prueba de caudal de aire acondicionado", completed: "check", observation: "Flujo óptimo" }
+                    ]
+                },
+                {
+                    id: "OT-105",
+                    asset: "Caterpillar CS11 (Rodillo Comp.)",
+                    type: "Correctivo",
+                    priority: "Alta",
+                    status: "Abierta",
+                    desc: "Inspección de empaquetadura del cilindro de giro ante pérdida de presión de servicio.",
+                    date: "15/07/2026",
+                    tech: "Ing. Abdiel Henriquez",
+                    costParts: 110.00,
+                    costLabor: 100.00,
+                    image: "",
+                    checklist: [
+                        { id: 1, task: "Desmontar vástago principal", completed: "pending", observation: "" },
+                        { id: 2, task: "Medir tolerancia de camisa de cilindro", completed: "pending", observation: "" }
+                    ]
+                }
+            ],
+            // EXACTAMENTE 5 ÓRDENES DE COMPRA (Vinculadas a OTs)
+            compras: [
+                { id: "PO-001", supplier: "Cardoze & Lindo", detail: "Filtros de Aceite CAT 1R-1808", ot: "OT-101", amount: 245.00, status: "Aprobado" },
+                { id: "PO-002", supplier: "COPAMA", detail: "Aceite Hidráulico SAE 10W (8 cubetas)", ot: "OT-102", amount: 320.00, status: "Entregado" },
+                { id: "PO-003", supplier: "Grupo Tova", detail: "Correa de Alternador CAT", ot: "OT-103", amount: 85.00, status: "Entregado" },
+                { id: "PO-004", supplier: "Cardoze & Lindo", detail: "Filtro de Aire Primario CAT", ot: "OT-104", amount: 150.00, status: "Aprobado" },
+                { id: "PO-005", supplier: "COPAMA", detail: "Kit de Sellos Hidráulicos", ot: "OT-105", amount: 110.00, status: "Pendiente" }
+            ],
+            fallas: [
+                { id: "FL-001", asset: "Caterpillar 416", severity: "BAJA", desc: "Chirrido leve en cilindro hidráulico de elevación", date: "10/07/2026" }
+            ],
+            spares: [
+                { code: "FLT-1R-1808", name: "Filtro de Aceite CAT 1R-1808", desc: "Filtro de lubricación oficial", brand: "Caterpillar", compat: "CAT 416, CAT D6", price: 45.00, stock: 12, minStock: 3, provider: "Cardoze & Lindo", location: "Estantería A-2" },
+                { code: "LUB-15W40", name: "Aceite SAE 15W-40 (Cubeta)", desc: "Aceite de motor de servicio pesado", brand: "Chevron", compat: "Flota Completa", price: 95.00, stock: 8, minStock: 2, provider: "COPAMA", location: "Zona Lubricantes" },
+                { code: "ROL-MACK-HD", name: "Rodillo de Apoyo de Tambor", desc: "Soporte de acero de alta resistencia", brand: "Mack", compat: "Flota de Mezcla", price: 195.00, stock: 4, minStock: 1, provider: "Cardoze & Lindo", location: "Piso Estantes B" },
+                { code: "COR-ALT-416", name: "Correa de Alternador CAT", desc: "Correa dentada de transmisión", brand: "Caterpillar", compat: "CAT 416", price: 28.00, stock: 6, minStock: 2, provider: "Grupo Tova", location: "Ganchera C-4" }
+            ],
+            // BASE DE DATOS DE CONOCIMIENTO (VINCULADA A EQUIPOS)
+            kb: [
+                {
+                    id: "KB-001",
+                    title: "Manual de Mantenimiento Caterpillar 320",
+                    type: "PDF",
+                    category: "Manual de Operación",
+                    desc: "Pautas de fábrica oficiales para el mantenimiento preventivo por horómetro.",
+                    linkedAsset: "CAT-320-2026",
+                    fileUrl: "https://www.cat.com",
+                    fileName: "OMM_Caterpillar_320.pdf",
+                    simulatedContent: "SISTEMA HIDRÁULICO CAT 320:\n- Presión de alivio principal: 35,000 kPa\n- Intervalo de cambio de filtros: Cada 500 horas de servicio.\n- Aceite sugerido: Cat HYDO Advanced 10.\n- Capacidad del sistema de enfriamiento: 28 L.\n\nVALORES DE AJUSTE DE MOTOR:\n- Luz de botalón nominal: 0.38 mm\n- Luz de válvulas de escape: 0.76 mm\n\n© Caterpillar Corp. Derechos Reservados."
+                },
+                {
+                    id: "KB-002",
+                    title: "Ficha de Presión Hidráulica Caterpillar 416",
+                    type: "PDF",
+                    category: "Ficha Técnica",
+                    desc: "Rangos oficiales de presión del sistema hidráulico del cargador y retroexcavadora.",
+                    linkedAsset: "CAT-416-2026",
+                    fileUrl: "https://www.cat.com",
+                    fileName: "Specs_Hydraulics_CAT416.pdf",
+                    simulatedContent: "PARÁMETROS HIDRÁULICOS - SERIE CAT 416:\n- Presión máxima en bomba de pistón: 25,000 kPa\n- Caudal nominal a 2,200 rpm: 132 L/min\n- Cilindro de inclinación (Diámetro interior): 101.6 mm\n- Cilindro de elevación (Carrera útil): 787 mm\n\nRECOMENDACIÓN TÉCNICA DE PANAMÁ:\nInspeccionar mangueras ante el calor extremo de la obra."
+                }
+            ]
+        };
+
+        // BASE DE DATOS CONCEPTUAL (Requerimiento: Puntos 1, 2, 3 y 4 de fiabilidad)
+        const kbConcepts = {
+            efectividad: {
+                title: "1. Medición de la Efectividad y Eficiencia en Mantenimiento",
+                type: "Estándar Corporativo",
+                category: "Eficiencia (OEE)",
+                fileName: "Mantenimiento_Eficiente.docx",
+                simulatedContent: `MEDICIÓN DE EFECTIVIDAD Y EFICIENCIA (ISO 55000)
+
+1. EFECTIVIDAD (¿Hacemos el trabajo correcto?):
+Se evalúa mediante el cumplimiento del plan preventivo y predictivo.
+- Fórmula de Cumplimiento:
+  (OTs Preventivas Completadas / OTs Preventivas Programadas) x 100
+- Meta Internacional: >90%
+
+2. EFICIENCIA (¿Optimizamos recursos?):
+Relación entre horas-hombre estimadas contra ejecutadas, y costo presupuestado contra real.
+- Productividad de Mano de Obra (Wrench Time): Tiempo real que el técnico pasa ajustando tornillos, no buscando repuestos. Meta óptima: >65%
+
+3. OEE (Efectividad Global del Equipo):
+Fórmula integrada: OEE = Disponibilidad x Rendimiento x Calidad.
+- En CMMS Henriquez: Nos enfocamos en maximizar la Disponibilidad de los CAT en obra.`
+            },
+            costos: {
+                title: "2. Análisis de Costos Asociados al Mantenimiento",
+                type: "Estándar Corporativo",
+                category: "LCC & Finanzas",
+                fileName: "Analisis_Costos.pdf",
+                simulatedContent: `ANÁLISIS DE COSTOS EN MULTISERVICIOS HENRIQUEZ
+
+¿POR QUÉ ANALIZAMOS EL COSTO?:
+1. Costo del Ciclo de Vida (LCC):
+El costo de adquisición de una excavadora Caterpillar es solo el 20% de su LCC. El 80% restante corresponde a consumibles, lubricación, mantenimiento correctivo y reparaciones mayores en su vida útil.
+
+2. Costo de Inactividad (Downtime Cost):
+Una hora de paro de una excavadora CAT 320 en un puerto panameño puede superar los $1,500.00 USD en multas y retrasos logísticos de obra.
+
+3. Relación de Costos Preventivo vs. Correctivo:
+Mantener un ratio financiero de 80% preventivo / 20% correctivo garantiza el retorno de inversión (ROI) más alto del sector industrial.`
+            },
+            confiabilidad: {
+                title: "3. Evaluación de Confiabilidad y Disponibilidad",
+                type: "Estándar Corporativo",
+                category: "Fiabilidad RCM",
+                fileName: "Confiabilidad_Equipos.pdf",
+                simulatedContent: `EVALUACIÓN DE CONFIABILIDAD Y DISPONIBILIDAD DE ACTIVOS
+
+1. DISPONIBILIDAD (Availability):
+Mide la proporción de tiempo que un equipo está listo para operar sobre el tiempo total planeado.
+- Disponibilidad = MTBF / (MTBF + MTTR)
+- En M. Henriquez Enterprise buscamos un nivel de disponibilidad consolidado de flota > 92%.
+
+2. CONFIABILIDAD (Reliability):
+La probabilidad de que un equipo opere sin fallas durante un periodo de tiempo determinado bajo condiciones de trabajo estándar.
+- Análisis de Curva Weibull: Nos ayuda a identificar si un equipo está sufriendo fallas por mortalidad infantil (instalación incorrecta) o por desgaste natural por horómetro.
+- RCM (Mantenimiento Centrado en Confiabilidad): Identificar la función de cada activo y sus modos de falla posibles antes de estructurar el preventivo.`
+            },
+            herramientas: {
+                title: "4. Herramientas para la Interpretación de Indicadores",
+                type: "Estándar Corporativo",
+                category: "Visualización e Indicadores",
+                fileName: "Herramientas_Interpretacion.docx",
+                simulatedContent: `HERRAMIENTAS PARA LA INTERPRETACIÓN DE INDICADORES TÉCNICOS
+
+Para convertir datos en decisiones reales en Sabanitas, Colón, utilizamos:
+
+1. DIAGRAMAS DE PARETO (Ley del 80/20):
+El 80% de los retrasos en obra es provocado por el 20% de los modos de falla (generalmente mangueras hidráulicas y sistemas eléctricos).
+
+2. RCA (Análisis de Causa Raíz - Los 5 Porqués):
+Metodología para no quedarse en la superficie de una avería. Si una bomba hidráulica falla, preguntamos "por qué" de forma secuencial hasta dar con la causa raíz (ej. contaminación de aceite por falta de cambio de filtro primario).
+
+3. DASHBOARDS DINÁMICOS EN TIEMPO REAL:
+Herramientas visuales como Chart.js que permiten segmentar los costos por día, semana, mes y año para identificar fugas presupuestarias de forma inmediata.`
+            }
+        };
+
+        let currentActiveTab = "dashboard";
+        let kpiTrendChartInstance = null;
+        let costsChartInstance = null;
+        let currentEditingAssetId = null;
+
+        // INICIALIZACIÓN DE LA APLICACIÓN
+        window.onload = function() {
+            recalculateMetrics(); // Calculamos los indicadores financieros y de fiabilidad en base al state real
+            renderDashboardHours();
+            renderAssets();
+            renderOtsTable();
+            renderPurchaseOrders();
+            renderFailureHistory();
+            renderKbList();
+            renderSpares();
+            initKpiChart();
+            initCostsChart();
+            startScadaSimulation();
+
+            // Escuchador dinámico de cambio en origen del documento en el modal de equipos
+            const fileInputEq = document.getElementById('eq-doc-file-input');
+            if (fileInputEq) {
+                fileInputEq.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        document.getElementById('eq-doc-pc-label').innerHTML = `<i class="fa-solid fa-file-circle-check text-emerald-500"></i> ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                    }
+                });
+            }
+        };
+
+        // GESTIÓN DE ROLES
+        function changeUserRole() {
+            const selectedRole = document.getElementById('user-role-selector').value;
+            state.usuario.role = selectedRole;
+            showNotification(`Rol de acceso cambiado a: ${selectedRole}`, "info");
+        }
+
+        // RECALCULAR TODAS LAS MÉTRICAS DESDE EL STATE REAL (Dashboard dinámico)
+        function recalculateMetrics() {
+            const totalEquipos = state.equipos.length;
+            const activosOperativos = state.equipos.filter(e => e.status === "OPERATIVO").length;
+            const availability = (activosOperativos / totalEquipos) * 100;
+            document.getElementById('kpi-availability').innerText = `${availability.toFixed(1)}%`;
+
+            const totalOts = state.ots.length;
+            const otsCerradas = state.ots.filter(o => o.status === "Cerrada").length;
+            const reliability = totalOts > 0 ? (otsCerradas / totalOts) * 100 : 95.0;
+            document.getElementById('kpi-reliability').innerText = `${reliability.toFixed(1)}%`;
+
+            let computedMtbf = 412; // Valor base saludable
+            let computedMttr = 1.8;
+            if (state.equipos.some(e => e.status === "CRÍTICO")) {
+                computedMtbf = 220; // Penalización por paro crítico de flota
+                computedMttr = 3.2;
+            }
+            document.getElementById('kpi-mtbf').innerText = `${computedMtbf} Hrs`;
+            document.getElementById('kpi-mttr').innerText = `${computedMttr.toFixed(1)} Hrs`;
+
+            document.getElementById('dash-operativos-txt').innerText = `${activosOperativos} / ${totalEquipos}`;
+            const percentageOperativos = (activosOperativos / totalEquipos) * 100;
+            document.getElementById('dash-operativos-bar').style.width = `${percentageOperativos}%`;
+
+            const percentageOtsResolved = totalOts > 0 ? (otsCerradas / totalOts) * 100 : 0;
+            document.getElementById('dash-ots-resolved-txt').innerText = `${percentageOtsResolved.toFixed(0)}%`;
+            document.getElementById('dash-ots-resolved-bar').style.width = `${percentageOtsResolved}%`;
+
+            const laborCosts = state.ots.reduce((acc, o) => acc + o.costLabor, 0);
+            const sparesCosts = state.compras.reduce((acc, p) => acc + p.amount, 0);
+            const externals = 9150.00; // Contratos fijos de tornerías
+            const subtotal = laborCosts + sparesCosts + externals;
+            const tax = subtotal * 0.07;
+            const total = subtotal + tax;
+
+            document.getElementById('consolidated-labor').innerText = `$${laborCosts.toFixed(2)}`;
+            document.getElementById('consolidated-spares').innerText = `$${sparesCosts.toFixed(2)}`;
+            document.getElementById('consolidated-subtotal').innerText = `$${subtotal.toFixed(2)}`;
+            document.getElementById('consolidated-itbms').innerText = `$${tax.toFixed(2)}`;
+            document.getElementById('consolidated-total').innerText = `$${total.toFixed(2)} USD`;
+        }
+
+        // CONTROLADOR DE PESTAÑAS (SPA)
+        function switchTab(tabId) {
+            document.querySelectorAll('.module-tab').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                btn.classList.add('text-slate-400', 'hover:bg-slate-800', 'hover:text-white');
+            });
+
+            document.getElementById(`module-${tabId}`).classList.remove('hidden');
+            const targetBtn = document.getElementById(`btn-${tabId}`);
+            targetBtn.classList.remove('text-slate-400', 'hover:bg-slate-800', 'hover:text-white');
+            targetBtn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+
+            const tabTitles = {
+                dashboard: "Dashboard General",
+                equipos: "Control de Activos Físicos",
+                ots: "Órdenes de Trabajo Activas",
+                inventario: "Inventario de Repuestos y Compras",
+                costos: "Contabilidad e Inversión de Mantenimiento",
+                fallas: "Registro de Fallas y Eventos",
+                calidad: "Calidad & Confiabilidad ISO 55000",
+                comunicacion: "Bitácora de Comunicación",
+                kb: "Base de Conocimiento de Maquinaria"
+            };
+            document.getElementById('current-module-title').innerText = tabTitles[tabId];
+            currentActiveTab = tabId;
+
+            recalculateMetrics();
+
+            if (tabId === 'dashboard') {
+                initKpiChart();
+            }
+            if (tabId === 'costos') {
+                initCostsChart();
+            }
+        }
+
+        // SIMULADOR SCADA E INDUCCIÓN DE HORÓMETRO
+        function startScadaSimulation() {
+            setInterval(() => {
+                state.equipos.forEach((eq) => {
+                    if (eq.status === "OPERATIVO") {
+                        eq.hours = parseFloat((eq.hours + 0.1).toFixed(1));
+                    }
+                });
+                renderDashboardHours();
+                updateDashboardHoursUI();
+            }, 6000); // Actualiza cada 6 segundos simulando avance de motores
+        }
+
+        function renderDashboardHours() {
+            const container = document.getElementById('dashboard-hours-container');
+            if (!container) return;
+            container.innerHTML = "";
+            state.equipos.forEach(eq => {
+                container.innerHTML += `
+                    <div class="border border-slate-200 bg-white rounded-xl p-4 shadow-sm hover:border-blue-300 transition-all text-center">
+                        <span class="w-2.5 h-2.5 ${eq.status === 'OPERATIVO' ? 'bg-emerald-500' : 'bg-red-500 scada-pulse'} rounded-full inline-block mb-1.5"></span>
+                        <h4 class="font-bold text-xs text-slate-700">${eq.model}</h4>
+                        <p class="text-[10px] text-slate-400">${eq.name.split(' ')[1] || 'Equipo'}</p>
+                        <p id="dash-hours-${eq.id}" class="text-sm font-bold text-slate-800 mt-2">${eq.hours} Hrs</p>
+                    </div>
+                `;
+            });
+        }
+
+        function updateDashboardHoursUI() {
+            state.equipos.forEach(eq => {
+                const el = document.getElementById(`dash-hours-${eq.id}`);
+                if (el) el.innerText = `${eq.hours} Hrs`;
+            });
+        }
+
+        // DISPARAR PARO DE EMERGENCIA DE PLANTA
+        function triggerGlobalCriticalFailure() {
+            state.equipos[0].status = "CRÍTICO";
+            renderAssets();
+            recalculateMetrics();
+            showNotification("¡URGENTE! Retroexcavadora Caterpillar 416 en estado crítico. Mapeado de orden correctiva disparado.", "danger");
+
+            const newOt = {
+                id: "OT-EMER-" + Math.floor(100 + Math.random() * 900),
+                asset: "Caterpillar 416 (Retroexcavadora)",
+                type: "Emergencia",
+                priority: "Alta",
+                status: "Abierta",
+                desc: "Sobrecalentamiento crítico de bomba hidráulica detectado en obra de Panamá Oeste.",
+                date: "15/07/2026",
+                tech: "Abdiel Henriquez",
+                costParts: 350.00,
+                costLabor: 120.00,
+                image: "",
+                checklist: [
+                    { id: 1, task: "Despresurizar cilindro hidráulico principal", completed: "pending", observation: "" },
+                    { id: 2, task: "Evaluar filtros de retorno de metal", completed: "pending", observation: "" }
+                ]
+            };
+            state.ots.unshift(newOt);
+            renderOtsTable();
+
+            state.fallas.unshift({
+                id: "FL-EMER",
+                asset: "Caterpillar 416",
+                severity: "ALTA",
+                desc: "Sobrecalentamiento y bloqueo de giro de botalón.",
+                date: "15/07/2026"
+            });
+            renderFailureHistory();
+        }
+
+        // PROGRAMACIÓN AUTOMÁTICA SEGÚN MANUAL
+        function getNextMaintenanceAlert(hours) {
+            const intervals = [50, 100, 250, 500, 1000, 2000, 5000];
+            for (let inter of intervals) {
+                if (hours < inter) {
+                    return `Próximo preventivo: ${inter} Hrs (Faltan ${(inter - hours).toFixed(1)} Hrs)`;
+                }
+            }
+            return "Próximo preventivo: Ciclo de 10,000 Hrs";
+        }
+
+        // RENDER DE CONTROL DE ACTIVOS (Diseño con foto del equipo a la izquierda y botones funcionales)
+        function renderAssets() {
+            const container = document.getElementById('assets-grid-container');
+            if (!container) return;
+            container.innerHTML = "";
+
+            state.equipos.forEach(eq => {
+                const statusBadge = eq.status === 'OPERATIVO' 
+                    ? '<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full">OPERATIVO</span>'
+                    : '<span class="bg-red-50 text-red-700 border border-red-200 text-[10px] font-bold px-2 py-0.5 rounded-full scada-pulse">CRÍTICO / PARADO</span>';
+
+                const linkedManuals = (state.kb || []).filter(item => item.linkedAsset === eq.id);
+                let manualsHtml = "";
+                if (linkedManuals.length > 0) {
+                    manualsHtml = `
+                        <div class="mt-2 pt-2 border-t border-slate-100">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1"><i class="fa-solid fa-book text-slate-400"></i> Documentos Vinculados:</p>
+                            <div class="space-y-1">
+                                ${linkedManuals.map(man => `
+                                    <button onclick="viewKbDocumentDirectly('${man.id}')" class="text-[11px] text-blue-600 hover:underline flex items-center space-x-1 font-semibold text-left">
+                                        <i class="fa-solid fa-file-circle-check text-slate-400"></i>
+                                        <span>${man.title} (${man.type})</span>
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    manualsHtml = `
+                        <p class="text-[10px] text-slate-400 italic mt-2"><i class="fa-solid fa-triangle-exclamation"></i> Sin documentos vinculados.</p>
+                    `;
+                }
+
+                let validationWarning = "";
+                if (eq.specs.airFilter !== "CAT 1R-1808" && eq.model === "416") {
+                    validationWarning = `
+                        <div class="mt-2 bg-amber-50 border border-amber-200 p-2 rounded text-[10px] text-amber-700 font-semibold">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Alerta: Filtro ingresado no coincide con el manual original.
+                        </div>
+                    `;
+                }
+
+                const photoSrc = eq.photo || "https://images.unsplash.com/photo-1541625602330-2277a4c4b28d?auto=format&fit=crop&q=80&w=400";
+
+                container.innerHTML += `
+                    <div class="border border-slate-200 bg-white rounded-xl overflow-hidden hover:border-blue-300 transition-all flex flex-col sm:flex-row shadow-sm">
+                        <!-- Pequeño cuadro a la izquierda para la foto del equipo -->
+                        <div class="w-full sm:w-44 h-48 sm:h-auto relative bg-slate-100 shrink-0 border-r border-slate-100">
+                            <img src="${photoSrc}" alt="${eq.name}" class="w-full h-full object-cover">
+                            <div class="absolute bottom-2 left-2">
+                                ${statusBadge}
+                            </div>
+                        </div>
+
+                        <!-- Detalles del activo a la derecha -->
+                        <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
+                            <div>
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 class="font-extrabold text-sm text-slate-800">${eq.name}</h4>
+                                        <p class="text-[10px] text-slate-400">ID: ${eq.id} • Serie: ${eq.serial}</p>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg text-slate-600 mt-2">
+                                    <div><strong>Horas:</strong> ${eq.hours} Hrs</div>
+                                    <div><strong>Año:</strong> ${eq.year}</div>
+                                    <div class="col-span-2 truncate"><strong>Proyecto:</strong> ${eq.project}</div>
+                                </div>
+
+                                ${validationWarning}
+                                ${manualsHtml}
+                            </div>
+
+                            <div class="text-[10px] text-blue-600 font-bold bg-blue-50/50 p-1.5 rounded border border-blue-100 flex justify-between items-center">
+                                <span><i class="fa-solid fa-clock"></i> ${getNextMaintenanceAlert(eq.hours)}</span>
+                            </div>
+
+                            <div class="flex justify-between items-center pt-2 border-t border-slate-100 flex-wrap gap-2">
+                                <button onclick="openManualModal('${eq.id}')" class="text-xs text-slate-600 hover:text-slate-800 font-bold flex items-center space-x-1">
+                                    <i class="fa-solid fa-file-waveform text-blue-500"></i> <span>Calibrar</span>
+                                </button>
+                                <button onclick="openImageModal('${eq.id}')" class="text-xs text-slate-600 hover:text-slate-800 font-bold flex items-center space-x-1">
+                                    <i class="fa-solid fa-camera text-emerald-500"></i> <span>Fotos (${eq.gallery.length})</span>
+                                </button>
+                                <button onclick="openUploadDocModal('${eq.id}')" class="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> <span>Vincular Documento</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- APARTADO GESTIÓN DE SUBIDAS DE ARCHIVOS EN EQUIPOS (PDF, WORD, URL, DESDE PC) ---
+        
+        function openUploadDocModal(assetId) {
+            document.getElementById('eq-doc-active-id').value = assetId;
+            const eq = state.equipos.find(e => e.id === assetId);
+            document.getElementById('eq-doc-modal-title').innerText = `Vincular Recurso a ${eq.name}`;
+            
+            // Limpiar formulario de subida
+            document.getElementById('eq-doc-title').value = "";
+            document.getElementById('eq-doc-desc').value = "";
+            document.getElementById('eq-doc-url-input').value = "";
+            document.getElementById('eq-doc-file-input').value = "";
+            document.getElementById('eq-doc-pc-label').innerHTML = `Haz clic para buscar en tu PC`;
+            
+            // Mostrar modal
+            document.getElementById('equipment-doc-modal').classList.remove('hidden');
+        }
+
+        function closeUploadDocModal() {
+            document.getElementById('equipment-doc-modal').classList.add('hidden');
+        }
+
+        function handleEqDocSourceChange() {
+            const sourceType = document.getElementById('eq-doc-source-type').value;
+            const pcContainer = document.getElementById('eq-doc-pc-container');
+            const urlContainer = document.getElementById('eq-doc-url-container');
+            
+            if (sourceType === "PC") {
+                pcContainer.classList.remove('hidden');
+                urlContainer.classList.add('hidden');
+            } else {
+                pcContainer.classList.add('hidden');
+                urlContainer.classList.remove('hidden');
+            }
+        }
+
+        // Procesa la subida del documento y lo vincula al equipo de forma síncrona
+        function handleEqDocSubmit() {
+            const assetId = document.getElementById('eq-doc-active-id').value;
+            const title = document.getElementById('eq-doc-title').value.trim();
+            const category = document.getElementById('eq-doc-category').value;
+            const sourceType = document.getElementById('eq-doc-source-type').value;
+            const desc = document.getElementById('eq-doc-desc').value.trim();
+
+            if (!title) {
+                showNotification("Debe ingresar un título para el documento.", "warning");
+                return;
+            }
+
+            const eq = state.equipos.find(e => e.id === assetId);
+            const newDocId = "KB-EQ-" + Math.floor(100 + Math.random() * 900);
+
+            const newDoc = {
+                id: newDocId,
+                title: title,
+                category: category,
+                desc: desc || `Especificaciones adjuntas para ${eq.name}`,
+                linkedAsset: assetId,
+                fileUrl: "#",
+                fileName: "",
+                type: "PDF", // Default
+                simulatedContent: ""
+            };
+
+            if (sourceType === "URL") {
+                const url = document.getElementById('eq-doc-url-input').value.trim();
+                if (!url) {
+                    showNotification("Debe ingresar una dirección URL válida.", "warning");
+                    return;
+                }
+                newDoc.fileUrl = url;
+                newDoc.type = "Enlace";
+                newDoc.fileName = "Enlace Web Caterpillar";
+                newDoc.simulatedContent = `ENLACE EXTERNO VINCULADO:\nDirección Web: ${url}\n\nEnlace asociado al equipo ${eq.name}. Use el botón inferior para abrirlo en una ventana segura de internet.`;
+                
+                // Guardar en la base de datos local
+                saveDocumentFromEquipment(newDoc);
+            } else {
+                // Subir desde la PC (PDF o Word)
+                const fileInput = document.getElementById('eq-doc-file-input');
+                const file = fileInput.files[0];
+
+                if (!file) {
+                    showNotification("Por favor, seleccione un archivo de su PC.", "warning");
+                    return;
+                }
+
+                newDoc.fileName = file.name;
+                const isPdf = file.name.toLowerCase().endsWith('.pdf');
+                newDoc.type = isPdf ? "PDF" : "Word";
+
+                // Procesamiento real con FileReader
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    newDoc.fileUrl = e.target.result; // Contenido en formato DataURL Base64
+                    newDoc.simulatedContent = `=== DOCUMENTO DE MI PC CARGADO EXITOSAMENTE ===\nNombre del Archivo: ${file.name}\nTamaño: ${(file.size / 1024).toFixed(1)} KB\nFormato: ${newDoc.type}\nEquipo Asociado: ${eq.name}\n\nDescripción Técnica:\n${desc || 'Sin observaciones.'}\n\n[El archivo ha sido cargado con éxito en el CMMS y está listo para consulta y auditoría de obra]`;
+                    
+                    saveDocumentFromEquipment(newDoc);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveDocumentFromEquipment(docObj) {
+            state.kb.unshift(docObj);
+            renderAssets();
+            renderKbList();
+            closeUploadDocModal();
+            showNotification(`Documento técnico "${docObj.title}" vinculado exitosamente a la flota.`, "info");
+        }
+
+
+        // VALIDACIÓN DE ROLES Y NOTIFICACIONES
+        let activeAssetManualId = null;
+        function openManualModal(assetId) {
+            activeAssetManualId = assetId;
+            const eq = state.equipos.find(e => e.id === assetId);
+            document.getElementById('manual-val-title').innerText = `Validar con Manual de Taller - ${eq.name}`;
+            document.getElementById('manual-val-results').classList.add('hidden');
+            document.getElementById('manual-modal').classList.remove('hidden');
+        }
+
+        function closeManualModal() {
+            document.getElementById('manual-modal').classList.add('hidden');
+        }
+
+        function triggerAiManualExtraction() {
+            const eq = state.equipos.find(e => e.id === activeAssetManualId);
+            showNotification("IA procesando manual de taller y extrayendo directrices...", "info");
+            
+            setTimeout(() => {
+                document.getElementById('official-lube').innerText = eq.specs.lubricants;
+                document.getElementById('official-hydraulic').innerText = eq.specs.hydraulicOil;
+                document.getElementById('official-filter').innerText = eq.specs.airFilter;
+                document.getElementById('manual-val-results').classList.remove('hidden');
+                showNotification("Extracción finalizada. Datos validados correctamente con la base de datos.", "info");
+            }, 1200);
+        }
+
+        // CARGA DE FOTOGRAFÍAS A LA GALERÍA DESDE PC O URL
+        let activeAssetImageId = null;
+        function openImageModal(assetId) {
+            activeAssetImageId = assetId;
+            renderAssetGallery();
+            document.getElementById('image-modal').classList.remove('hidden');
+        }
+
+        function closeImageModal() {
+            document.getElementById('image-modal').classList.add('hidden');
+        }
+
+        // Subida real de fotos desde PC mediante FileReader
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const eq = state.equipos.find(item => item.id === activeAssetImageId);
+                const base64Data = e.target.result;
+                
+                eq.gallery.push(base64Data); // Guardar en el arreglo de fotos
+                
+                // Si es la primera foto que sube el usuario, la establecemos como principal automáticamente
+                if (eq.gallery.length === 1 || eq.photo === "") {
+                    eq.photo = base64Data;
+                }
+
+                renderAssetGallery();
+                renderAssets();
+                showNotification("Fotografía cargada exitosamente al historial del equipo.", "info");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleImageUrlUpload() {
+            const url = document.getElementById('asset-image-url-input').value.trim();
+            if (!url) return;
+            const eq = state.equipos.find(item => item.id === activeAssetImageId);
+            
+            eq.gallery.push(url);
+            
+            // Si no tenía foto principal asignada, la colocamos por defecto
+            if (eq.photo === "") {
+                eq.photo = url;
+            }
+
+            document.getElementById('asset-image-url-input').value = "";
+            renderAssetGallery();
+            renderAssets();
+            showNotification("Enlace fotográfico cargado exitosamente.", "info");
+        }
+
+        // Permite definir cuál imagen de la galería es la que se mostrará en el marco de la tarjeta
+        function setAsPrimaryPhoto(index) {
+            const eq = state.equipos.find(item => item.id === activeAssetImageId);
+            if (eq && eq.gallery[index]) {
+                eq.photo = eq.gallery[index];
+                renderAssetGallery();
+                renderAssets();
+                showNotification(`Foto principal de ${eq.name} actualizada con éxito.`, "info");
+            }
+        }
+
+        function deleteAssetImage(index) {
+            const eq = state.equipos.find(item => item.id === activeAssetImageId);
+            const deletedPhoto = eq.gallery[index];
+            
+            eq.gallery.splice(index, 1);
+            
+            // Si la foto eliminada era la principal, reasignamos la primera disponible
+            if (eq.photo === deletedPhoto) {
+                eq.photo = eq.gallery.length > 0 ? eq.gallery[0] : "";
+            }
+
+            renderAssetGallery();
+            renderAssets();
+            showNotification("Imagen eliminada de la galería.", "warning");
+        }
+
+        function renderAssetGallery() {
+            const container = document.getElementById('active-gallery-container');
+            if (!container) return;
+            container.innerHTML = "";
+            const eq = state.equipos.find(item => item.id === activeAssetImageId);
+
+            if (eq.gallery.length === 0) {
+                container.innerHTML = `<p class="text-slate-400 italic text-center col-span-3 py-4">No se han cargado fotografías todavía.</p>`;
+                return;
+            }
+
+            eq.gallery.forEach((img, index) => {
+                const isPrimary = eq.photo === img;
+                const primaryBorder = isPrimary ? 'border-blue-500 ring-2 ring-blue-400/20' : 'border-slate-200';
+                
+                container.innerHTML += `
+                    <div class="relative group rounded-lg overflow-hidden border ${primaryBorder} h-24 bg-slate-50 flex flex-col justify-between">
+                        <img src="${img}" class="w-full h-16 object-cover">
+                        <div class="flex justify-between items-center px-1 bg-white h-8 border-t border-slate-100">
+                            ${isPrimary 
+                                ? `<span class="text-[9px] text-blue-600 font-bold px-1.5"><i class="fa-solid fa-star"></i> Principal</span>` 
+                                : `<button onclick="setAsPrimaryPhoto(${index})" class="text-[9px] text-slate-500 hover:text-blue-600 font-bold px-1 py-0.5 rounded hover:bg-blue-50">Usar Principal</button>`
+                            }
+                            <button onclick="deleteAssetImage(${index})" type="button" class="text-red-500 hover:text-red-700 text-[10px] p-1">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // REGISTRAR NUEVO ACTIVO
+        function openNewAssetModal() {
+            document.getElementById('asset-modal').classList.remove('hidden');
+        }
+
+        function closeAssetModal() {
+            document.getElementById('asset-modal').classList.add('hidden');
+        }
+
+        function setDemoPhotoForAsset() {
+            document.getElementById('new-asset-photo-input').value = "https://images.unsplash.com/photo-1541625602330-2277a4c4b28d?auto=format&fit=crop&q=80&w=400";
+        }
+
+        function handleNewAssetSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('new-asset-name').value;
+            const code = document.getElementById('new-asset-code').value;
+            const model = document.getElementById('new-asset-model').value;
+            const serial = document.getElementById('new-asset-serial').value;
+            const year = parseInt(document.getElementById('new-asset-year').value);
+            const hours = parseFloat(document.getElementById('new-asset-hours').value);
+            const project = document.getElementById('new-asset-project').value;
+            const photo = document.getElementById('new-asset-photo-input').value;
+
+            const finalPhoto = photo || "https://images.unsplash.com/photo-1541625602330-2277a4c4b28d?auto=format&fit=crop&q=80&w=400";
+
+            const newEq = {
+                id: code,
+                name: name,
+                brand: "Caterpillar",
+                model: model,
+                serial: serial,
+                year: year,
+                hours: hours,
+                status: "OPERATIVO",
+                location: "Patio de talleres, Panamá",
+                project: project,
+                responsible: "Ing. Abdiel Henriquez",
+                acquisitionDate: "15/07/2026",
+                usefulLife: "10 años",
+                warranty: "Hasta 2,000 hrs",
+                provider: "Cardoze & Lindo",
+                photo: finalPhoto,
+                specs: {
+                    lubricants: "SAE 15W-40 Standard",
+                    coolantCapacity: "20 L",
+                    hydraulicOil: "SAE 10W Hydro",
+                    torqueHead: "160 Nm",
+                    airFilter: "CAT 1R-1808"
+                },
+                gallery: [finalPhoto]
+            };
+
+            state.equipos.push(newEq);
+            renderAssets();
+            renderDashboardHours();
+            recalculateMetrics();
+            closeAssetModal();
+            showNotification(`Activo ${code} registrado en el inventario.`, "info");
+        }
+
+        // RENDER DE TABLA DE ÓRDENES DE TRABAJO
+        function renderOtsTable() {
+            const tbody = document.getElementById('ot-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            const pFilter = document.getElementById('filter-ot-priority').value;
+            const aFilter = document.getElementById('filter-ot-asset').value;
+
+            state.ots.forEach(ot => {
+                if (pFilter !== "Todos" && ot.priority !== pFilter) return;
+                if (aFilter !== "Todos" && !ot.asset.includes(aFilter)) return;
+
+                const priorityColors = {
+                    Baja: 'bg-slate-100 text-slate-700',
+                    Media: 'bg-blue-50 text-blue-700',
+                    Alta: 'bg-red-50 text-red-700'
+                };
+                const statusColors = {
+                    Abierta: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                    "En Progreso": 'bg-amber-50 text-amber-700 border-amber-200',
+                    Cerrada: 'bg-slate-100 text-slate-500 border-slate-200'
+                };
+
+                const totalCost = (ot.costParts + ot.costLabor) * 1.07; // Costo con ITBMS (7%)
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-4 font-bold text-slate-800">${ot.id}</td>
+                        <td class="p-4 flex items-center space-x-2">
+                            <div>
+                                <span class="font-semibold block text-slate-800">${ot.asset}</span>
+                                <span class="text-slate-400 text-[10px]">Técnico: ${ot.tech}</span>
+                            </div>
+                        </td>
+                        <td class="p-4">
+                            <span class="font-bold block text-blue-600">${ot.type}</span>
+                            <span class="text-slate-500 text-[11px]">${ot.desc.substring(0, 50)}...</span>
+                        </td>
+                        <td class="p-4">
+                            <span class="${priorityColors[ot.priority]} text-[10px] font-bold px-2 py-0.5 rounded-full">${ot.priority}</span>
+                        </td>
+                        <td class="p-4">
+                            <span class="${statusColors[ot.status]} border text-[10px] font-bold px-2 py-0.5 rounded-full">${ot.status}</span>
+                        </td>
+                        <td class="p-4 font-bold text-slate-900">$${totalCost.toFixed(2)} USD</td>
+                        <td class="p-4 text-right space-x-2">
+                            <button onclick="openEditOtModal('${ot.id}')" class="text-blue-600 hover:text-blue-800 font-bold"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="openPrintOtModal('${ot.id}')" class="text-slate-600 hover:text-slate-800 font-bold"><i class="fa-solid fa-print"></i></button>
+                            <button onclick="deleteOt('${ot.id}')" class="text-red-500 hover:text-red-700 font-bold"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // CHAT DE LA BITÁCORA
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const container = document.getElementById('chat-messages-container');
+            container.innerHTML += `
+                <div class="flex items-start space-x-3 justify-end text-right">
+                    <div class="order-2 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-700 ml-3">AH</div>
+                    <div class="order-1">
+                        <div class="flex items-center justify-end space-x-2">
+                            <span class="text-xs font-bold text-slate-700">Mantenimiento (${state.usuario.nombre})</span>
+                            <span class="text-[10px] text-slate-400">Ahora</span>
+                        </div>
+                        <div class="bg-blue-600 text-white text-xs p-2.5 rounded-lg mt-1 text-left max-w-lg shadow-sm">
+                            ${msg}
+                        </div>
+                    </div>
+                </div>
+            `;
+            input.value = "";
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // CONTROL DE CHECKLIST DE OT
+        function addChecklistItem() {
+            addChecklistItemWithValues("", "pending", "");
+        }
+
+        function addChecklistItemWithValues(taskValue = "", status = "pending", obsValue = "") {
+            const container = document.getElementById('modal-checklist-container');
+            if (!container) return;
+            const itemId = 'chk-' + Math.floor(Math.random() * 100000);
+            
+            let statusBtnHtml = '';
+            if (status === 'check') {
+                statusBtnHtml = `<button type="button" onclick="cycleChecklistStatus('${itemId}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg font-bold">✔</button>`;
+            } else if (status === 'cross') {
+                statusBtnHtml = `<button type="button" onclick="cycleChecklistStatus('${itemId}')" class="bg-red-100 text-red-700 w-8 h-8 rounded-lg font-bold">✖</button>`;
+            } else {
+                statusBtnHtml = `<button type="button" onclick="cycleChecklistStatus('${itemId}')" class="bg-slate-100 text-slate-400 w-8 h-8 rounded-lg font-bold">...</button>`;
+            }
+
+            const li = document.createElement('li');
+            li.id = itemId;
+            li.className = "flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-3 bg-white p-3 border border-slate-200 rounded-lg shadow-sm";
+            li.innerHTML = `
+                <div class="flex items-center space-x-2 w-full md:w-auto shrink-0">
+                    <span class="checklist-status-holder">${statusBtnHtml}</span>
+                    <input type="text" class="checklist-task-input p-1.5 border border-slate-200 rounded text-xs w-48 font-semibold bg-slate-50 focus:outline-none" value="${taskValue}" placeholder="Tarea..." required>
+                </div>
+                <input type="text" class="checklist-obs-input flex-1 p-1.5 border border-slate-200 rounded text-xs w-full bg-slate-50 focus:outline-none" value="${obsValue}" placeholder="Observaciones técnicas de obra...">
+                <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 text-xs px-2"><i class="fa-solid fa-trash"></i></button>
+            `;
+            container.appendChild(li);
+        }
+
+        function cycleChecklistStatus(itemId) {
+            const item = document.getElementById(itemId);
+            const btnHolder = item.querySelector('.checklist-status-holder');
+            let currentStatus = "pending";
+
+            if (btnHolder.innerHTML.includes('✔')) {
+                currentStatus = "check";
+            } else if (btnHolder.innerHTML.includes('✖')) {
+                currentStatus = "cross";
+            }
+
+            if (currentStatus === 'pending') {
+                btnHolder.innerHTML = `<button type="button" onclick="cycleChecklistStatus('${itemId}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg font-bold">✔</button>`;
+            } else if (currentStatus === 'check') {
+                btnHolder.innerHTML = `<button type="button" onclick="cycleChecklistStatus('${itemId}')" class="bg-red-100 text-red-700 w-8 h-8 rounded-lg font-bold">✖</button>`;
+            } else {
+                btnHolder.innerHTML = `<button type="button" onclick="cycleChecklistStatus('${itemId}')" class="bg-slate-100 text-slate-400 w-8 h-8 rounded-lg font-bold">...</button>`;
+            }
+        }
+
+        // EDICIÓN / APERTURA DE FORMULARIO DE OT
+        function openNewOtModal() {
+            currentEditingAssetId = null;
+            document.getElementById('modal-ot-title').innerText = "Crear Nueva Orden de Trabajo";
+            document.getElementById('ot-form').reset();
+            document.getElementById('form-ot-id').value = "";
+            document.getElementById('modal-checklist-container').innerHTML = "";
+            addChecklistItemWithValues("Inspección de desgaste físico general", "pending");
+            addChecklistItemWithValues("Comprobación de fugas hidráulicas de obra", "pending");
+            document.getElementById('ot-modal').classList.remove('hidden');
+        }
+
+        function openEditOtModal(otId) {
+            currentEditingAssetId = otId;
+            const ot = state.ots.find(o => o.id === otId);
+            if (!ot) return;
+
+            document.getElementById('modal-ot-title').innerText = `Editar Orden de Trabajo - ${otId}`;
+            document.getElementById('form-ot-id').value = ot.id;
+            document.getElementById('form-ot-asset').value = ot.asset;
+            document.getElementById('form-ot-type').value = ot.type;
+            document.getElementById('form-ot-priority').value = ot.priority;
+            document.getElementById('form-ot-status').value = ot.status;
+            document.getElementById('form-ot-tech').value = ot.tech;
+            document.getElementById('form-ot-cost-parts').value = ot.costParts;
+            document.getElementById('form-ot-cost-labor').value = ot.costLabor;
+            document.getElementById('form-ot-img').value = ot.image;
+
+            const container = document.getElementById('modal-checklist-container');
+            container.innerHTML = "";
+            ot.checklist.forEach(item => {
+                addChecklistItemWithValues(item.task, item.completed, item.observation);
+            });
+
+            document.getElementById('ot-modal').classList.remove('hidden');
+        }
+
+        function closeOtModal() {
+            document.getElementById('ot-modal').classList.add('hidden');
+        }
+
+        function loadOtPlaceholderImage() {
+            document.getElementById('form-ot-img').value = "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=400";
+        }
+
+        function handleOtFormSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('form-ot-id').value;
+            const asset = document.getElementById('form-ot-asset').value;
+            const type = document.getElementById('form-ot-type').value;
+            const priority = document.getElementById('form-ot-priority').value;
+            const status = document.getElementById('form-ot-status').value;
+            const tech = document.getElementById('form-ot-tech').value;
+            const costParts = parseFloat(document.getElementById('form-ot-cost-parts').value);
+            const costLabor = parseFloat(document.getElementById('form-ot-cost-labor').value);
+            const image = document.getElementById('form-ot-img').value;
+
+            const checklistItems = [];
+            document.querySelectorAll('#modal-checklist-container li').forEach(li => {
+                const task = li.querySelector('.checklist-task-input').value;
+                const obs = li.querySelector('.checklist-obs-input').value;
+                const statusHolder = li.querySelector('.checklist-status-holder').innerHTML;
+                
+                let completed = "pending";
+                if (statusHolder.includes('✔')) completed = "check";
+                if (statusHolder.includes('✖')) completed = "cross";
+
+                checklistItems.push({
+                    id: Math.random(),
+                    task: task,
+                    completed: completed,
+                    observation: obs
+                });
+            });
+
+            if (currentEditingAssetId) {
+                const index = state.ots.findIndex(o => o.id === currentEditingAssetId);
+                state.ots[index] = { ...state.ots[index], asset, type, priority, status, tech, costParts, costLabor, image, checklist: checklistItems };
+                showNotification(`Orden de Trabajo ${currentEditingAssetId} guardada.`, "info");
+            } else {
+                const newId = "OT-" + Math.floor(100 + Math.random() * 900);
+                const newOt = {
+                    id: newId,
+                    asset, type, priority, status, tech, costParts, costLabor, image,
+                    date: "15/07/2026",
+                    checklist: checklistItems
+                };
+                state.ots.unshift(newOt);
+                
+                // Generar automáticamente una Orden de compra asociada de manera síncrona
+                const newPoId = "PO-NEW-" + Math.floor(100 + Math.random() * 900);
+                state.compras.push({
+                    id: newPoId,
+                    supplier: "Cardoze & Lindo",
+                    detail: `Repuestos integrados para ${asset}`,
+                    ot: newId,
+                    amount: costParts,
+                    status: "Aprobado"
+                });
+
+                showNotification(`Orden de Trabajo ${newId} e indicación de Compra ${newPoId} inicializadas.`, "info");
+            }
+
+            if (status === "Cerrada") {
+                deductRepuestoOnClose(asset);
+            }
+
+            closeOtModal();
+            renderOtsTable();
+            renderPurchaseOrders();
+            recalculateMetrics();
+            updateDashboardCharts();
+            initCostsChart();
+        }
+
+        // DESCUENTO AUTOMÁTICO DE INVENTARIO
+        function deductRepuestoOnClose(assetName) {
+            let itemDeducted = false;
+            state.spares.forEach(sp => {
+                if (assetName.includes(sp.compat.split(',')[0]) && sp.stock > 0) {
+                    sp.stock -= 1;
+                    itemDeducted = true;
+                    if (sp.stock <= sp.minStock) {
+                        showNotification(`¡STOCK ALERTA! Repuesto ${sp.name} ha llegado al mínimo de seguridad.`, "warning");
+                    }
+                }
+            });
+            if (itemDeducted) {
+                renderSpares();
+            }
+        }
+
+        function deleteOt(otId) {
+            state.ots = state.ots.filter(o => o.id !== otId);
+            state.compras = state.compras.filter(p => p.ot !== otId);
+            renderOtsTable();
+            renderPurchaseOrders();
+            recalculateMetrics();
+            updateDashboardCharts();
+            initCostsChart();
+            showNotification(`OT ${otId} y su orden de compra vinculada eliminadas.`, "warning");
+        }
+
+        // DETALLE DE IMPRESIÓN
+        let activePrintingOt = null;
+        function openPrintOtModal(otId) {
+            const ot = state.ots.find(o => o.id === otId);
+            if (!ot) return;
+            activePrintingOt = ot;
+
+            document.getElementById('print-ot-code').innerText = ot.id;
+            document.getElementById('print-ot-asset').innerText = ot.asset;
+            document.getElementById('print-ot-type').innerText = ot.type;
+            document.getElementById('print-ot-priority').innerText = ot.priority;
+            document.getElementById('print-ot-desc').innerText = ot.desc;
+
+            const imgSect = document.getElementById('print-ot-image-section');
+            if (ot.image) {
+                document.getElementById('print-ot-image').src = ot.image;
+                imgSect.classList.remove('hidden');
+            } else {
+                imgSect.classList.add('hidden');
+            }
+
+            const tbody = document.getElementById('print-ot-checklist-tbody');
+            tbody.innerHTML = "";
+            ot.checklist.forEach(item => {
+                let statusVal = 'PENDIENTE';
+                if (item.completed === 'check') statusVal = '<span class="text-emerald-600 font-bold">✔ CUMPLIDO</span>';
+                if (item.completed === 'cross') statusVal = '<span class="text-red-500 font-bold">✖ NO CUMPLIDO</span>';
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-2 border border-slate-200">${item.task}</td>
+                        <td class="p-2 border border-slate-200 text-center">${statusVal}</td>
+                        <td class="p-2 border border-slate-200">${item.observation || '-'}</td>
+                    </tr>
+                `;
+            });
+
+            const sub = ot.costParts + ot.costLabor;
+            const tax = sub * 0.07;
+            const total = sub + tax;
+
+            document.getElementById('print-ot-parts-cost').innerText = `$${ot.costParts.toFixed(2)}`;
+            document.getElementById('print-ot-labor-cost').innerText = `$${ot.costLabor.toFixed(2)}`;
+            document.getElementById('print-ot-itbms-cost').innerText = `$${tax.toFixed(2)}`;
+            document.getElementById('print-ot-total-cost').innerText = `$${total.toFixed(2)} USD`;
+
+            document.getElementById('print-ot-modal').classList.remove('hidden');
+        }
+
+        function closePrintOtModal() {
+            document.getElementById('print-ot-modal').classList.add('hidden');
+        }
+
+        function exportOtToTxt() {
+            if (!activePrintingOt) return;
+            const sub = activePrintingOt.costParts + activePrintingOt.costLabor;
+            const tax = sub * 0.07;
+            const total = sub + tax;
+
+            let text = `==================================================\n`;
+            text += `         MULTISERVICIOS HENRIQUEZ - CMMS         \n`;
+            text += `               FICHA TÉCNICA DE OT               \n`;
+            text += `==================================================\n\n`;
+            text += `ID OT: ${activePrintingOt.id}\n`;
+            text += `Equipo: ${activePrintingOt.asset}\n`;
+            text += `Tipo de Trabajo: ${activePrintingOt.type}\n`;
+            text += `Técnico: ${activePrintingOt.tech}\n`;
+            text += `Estado: ${activePrintingOt.status}\n`;
+            text += `Diagnóstico:\n${activePrintingOt.desc}\n\n`;
+            text += `--- CHECKLIST DE CONFORMIDAD ---\n`;
+            activePrintingOt.checklist.forEach(item => {
+                const sym = item.completed === 'check' ? '[✔]' : item.completed === 'cross' ? '[✖]' : '[ ]';
+                text += `${sym} ${item.task} - Obs: ${item.observation || 'Conforme'}\n`;
+            });
+            text += `\n--- CONTABILIDAD ---\n`;
+            text += `Repuestos: $${activePrintingOt.costParts.toFixed(2)} USD\n`;
+            text += `Mano de Obra: $${activePrintingOt.costLabor.toFixed(2)} USD\n`;
+            text += `ITBMS (7%): $${tax.toFixed(2)} USD\n`;
+            text += `Total Neto: $${total.toFixed(2)} USD\n\n`;
+            text += `==================================================\n`;
+            text += `Elaborado por Nahin Ceballos\n`;
+
+            const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `OT_${activePrintingOt.id}_Ficha.txt`;
+            link.click();
+        }
+
+        // RENDER DE REPUESTOS
+        function renderSpares() {
+            const container = document.getElementById('spares-grid-container');
+            if (!container) return;
+            container.innerHTML = "";
+
+            state.spares.forEach(sp => {
+                const stockColor = sp.stock <= sp.minStock ? 'text-red-600 bg-red-50 border-red-100' : 'text-slate-800 bg-slate-50 border-slate-200';
+                container.innerHTML += `
+                    <div class="border border-slate-200 rounded-xl p-4 bg-white hover:border-blue-300 transition-all text-xs flex flex-col justify-between space-y-4 shadow-sm">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded text-[9px] uppercase">${sp.brand}</span>
+                                <span class="text-[10px] text-slate-400 font-mono">${sp.code}</span>
+                            </div>
+                            <h4 class="font-extrabold text-slate-800 mb-1">${sp.name}</h4>
+                            <p class="text-slate-400 text-[10px]">${sp.desc}</p>
+                            <p class="text-slate-500 font-semibold mt-1">Compatibilidad: ${sp.compat}</p>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-100 flex justify-between items-center">
+                            <span class="text-slate-400">Stock</span>
+                            <span class="font-bold px-2.5 py-1 rounded border ${stockColor}">${sp.stock} Uds (Mín: ${sp.minStock})</span>
+                        </div>
+
+                        <div class="flex justify-between items-center text-[10px] text-slate-400 pt-2 border-t border-slate-100">
+                            <span>Ubicación: ${sp.location}</span>
+                            <span class="text-blue-600 font-bold">$${sp.price.toFixed(2)} USD</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // CONTROL DE RECURSOS DE BASE DE CONOCIMIENTO
+        function toggleKbForm() {
+            const form = document.getElementById('kb-upload-form');
+            if (form) form.classList.toggle('hidden');
+        }
+
+        function handleKbTypeChange() {
+            const type = document.getElementById('kb-type').value;
+            const fileContainer = document.getElementById('kb-file-container');
+            const urlContainer = document.getElementById('kb-url-container');
+
+            if (type === "Enlace") {
+                if (fileContainer) fileContainer.classList.add('hidden');
+                if (urlContainer) urlContainer.classList.remove('hidden');
+            } else {
+                if (fileContainer) fileContainer.classList.remove('hidden');
+                if (urlContainer) urlContainer.classList.add('hidden');
+            }
+        }
+
+        function handleKbSubmit() {
+            const title = document.getElementById('kb-title').value.trim();
+            const type = document.getElementById('kb-type').value;
+            const category = document.getElementById('kb-category').value;
+            const desc = document.getElementById('kb-desc').value.trim();
+            const linkedAsset = document.getElementById('kb-linked-asset').value;
+
+            if (!title || !desc) {
+                showNotification("Por favor, ingrese el título y la descripción del recurso.", "warning");
+                return;
+            }
+
+            const newResource = {
+                id: "KB-NEW-" + Math.floor(100 + Math.random() * 900),
+                title: title,
+                type: type,
+                category: category,
+                desc: desc,
+                linkedAsset: linkedAsset,
+                fileUrl: "#",
+                fileName: "documento_tecnico",
+                simulatedContent: `--- DOCUMENTO TÉCNICO SIMULADO ---\nTÍTULO: ${title}\nCATEGORÍA: ${category}\nDESCRIPCIÓN: ${desc}\n\nEste documento ha sido cargado exitosamente en el sistema de Multiservicios Henriquez.\nFecha de registro: ${new Date().toLocaleDateString()}\nValidez técnica certificada.`
+            };
+
+            if (type === "Enlace") {
+                const url = document.getElementById('kb-url-input').value.trim();
+                newResource.fileUrl = url || "https://cat.com";
+                newResource.fileName = "Enlace Web Caterpillar";
+                newResource.simulatedContent = `ENLACE EXTERNO VINCULADO:\nDirección: ${newResource.fileUrl}\n\nAl hacer clic en 'Visitar Enlace', la plataforma le redirigirá de forma segura al portal oficial de información del fabricante.`;
+                saveKbResource(newResource);
+            } else {
+                const fileInput = document.getElementById('kb-file-input');
+                const file = fileInput ? fileInput.files[0] : null;
+                
+                if (file) {
+                    newResource.fileName = file.name;
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        newResource.fileUrl = e.target.result;
+                        newResource.simulatedContent += `\n\n[ARCHIVO DETECTADO: ${file.name} - Tamaño: ${(file.size/1024).toFixed(1)} KB]`;
+                        saveKbResource(newResource);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    newResource.fileName = `Manual_${title.replace(/\s+/g, '_')}.${type === 'PDF' ? 'pdf' : 'docx'}`;
+                    saveKbResource(newResource);
+                }
+            }
+        }
+
+        function saveKbResource(resource) {
+            if (!state.kb) {
+                state.kb = [];
+            }
+            state.kb.unshift(resource);
+            renderKbList();
+            renderAssets(); 
+            toggleKbForm();
+            showNotification(`Recurso "${resource.title}" cargado y vinculado exitosamente.`, "info");
+        }
+
+        // RENDER DE LISTA DE RECURSOS DE CONOCIMIENTO
+        function renderKbList() {
+            const container = document.getElementById('kb-resources-container');
+            if (!container) return;
+            container.innerHTML = "";
+
+            const kbArticles = state.kb || [];
+
+            kbArticles.forEach(res => {
+                let icon = '<i class="fa-solid fa-file-pdf text-xl text-red-500"></i>';
+                if (res.type === "Word") {
+                    icon = '<i class="fa-solid fa-file-word text-xl text-blue-500"></i>';
+                } else if (res.type === "Enlace") {
+                    icon = '<i class="fa-solid fa-earth-americas text-xl text-emerald-500"></i>';
+                }
+
+                let assetBadge = "";
+                if (res.linkedAsset) {
+                    const eq = state.equipos.find(e => e.id === res.linkedAsset);
+                    const name = eq ? eq.name : res.linkedAsset;
+                    assetBadge = `<span class="bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded text-[9px] border border-blue-100"><i class="fa-solid fa-link"></i> ${name}</span>`;
+                } else {
+                    assetBadge = `<span class="bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded text-[9px]">General</span>`;
+                }
+
+                container.innerHTML += `
+                    <div onclick="viewKbDoc('${res.id}')" class="p-3 border border-slate-200 rounded-xl hover:border-blue-400 cursor-pointer transition-all flex items-start space-x-2.5 bg-white text-xs hover:shadow-sm">
+                        <div class="mt-1">${icon}</div>
+                        <div class="flex-1 space-y-1 min-w-0">
+                            <div class="flex flex-wrap gap-1 items-center">
+                                <span class="bg-slate-100 text-slate-700 font-bold px-1.5 py-0.5 rounded text-[8px] uppercase">${res.category}</span>
+                                ${assetBadge}
+                            </div>
+                            <h4 class="font-extrabold text-slate-800 text-[11px] truncate">${res.title}</h4>
+                            <p class="text-slate-500 text-[10px] truncate">${res.desc}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // MOSTRAR CONCEPTOS DE INGENIERÍA DE FIABILIDAD
+        function showKbConcept(conceptKey) {
+            const concept = kbConcepts[conceptKey];
+            if (!concept) return;
+
+            const viewer = document.getElementById('kb-viewer-panel');
+            if (!viewer) return;
+
+            let fileIcon = '<i class="fa-solid fa-graduation-cap text-2xl text-blue-500"></i>';
+            if (conceptKey === 'costos') fileIcon = '<i class="fa-solid fa-file-invoice-dollar text-2xl text-emerald-500"></i>';
+            if (conceptKey === 'confiabilidad') fileIcon = '<i class="fa-solid fa-shield text-2xl text-amber-500"></i>';
+            if (conceptKey === 'herramientas') fileIcon = '<i class="fa-solid fa-magnifying-glass-chart text-2xl text-purple-500"></i>';
+
+            viewer.innerHTML = `
+                <div class="flex flex-col h-full space-y-4">
+                    <div class="flex justify-between items-start border-b border-slate-200 pb-3">
+                        <div class="flex items-center space-x-3">
+                            <div>${fileIcon}</div>
+                            <div>
+                                <h4 class="font-extrabold text-sm text-slate-800">${concept.title}</h4>
+                                <p class="text-[10px] text-slate-400">Concepto de Fiabilidad • Estándar Corporativo</p>
+                            </div>
+                        </div>
+                        <span class="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded text-[9px] uppercase">${concept.category}</span>
+                    </div>
+
+                    <div class="flex-1 bg-slate-900 border border-slate-800 text-emerald-400 rounded-lg p-5 font-mono text-[11px] overflow-y-auto whitespace-pre-wrap shadow-inner min-h-[300px]">
+${concept.simulatedContent}
+                    </div>
+
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-200 text-xs text-slate-500">
+                        <span><i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i> Contenido Homologado por Nahin Ceballos</span>
+                        <button onclick="window.print()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-3 py-1.5 rounded-lg flex items-center space-x-1">
+                            <i class="fa-solid fa-print"></i> <span>Imprimir Guía</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // CARGAR DOCUMENTO EN EL VISOR DIRECTO
+        function viewKbDoc(docId) {
+            const res = state.kb.find(item => item.id === docId);
+            const viewer = document.getElementById('kb-viewer-panel');
+            if (!res || !viewer) return;
+
+            let fileIcon = '<i class="fa-solid fa-file-pdf text-2xl text-red-500"></i>';
+            if (res.type === "Word") {
+                fileIcon = '<i class="fa-solid fa-file-word text-2xl text-blue-500"></i>';
+            } else if (res.type === "Enlace") {
+                fileIcon = '<i class="fa-solid fa-earth-americas text-2xl text-emerald-500"></i>';
+            }
+
+            let assetLabel = "General / No Vinculado";
+            if (res.linkedAsset) {
+                const eq = state.equipos.find(e => e.id === res.linkedAsset);
+                assetLabel = eq ? eq.name : res.linkedAsset;
+            }
+
+            let actionButton = "";
+            let previewPanel = "";
+
+            if (res.type === "Enlace") {
+                actionButton = `
+                    <a href="${res.fileUrl}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg text-xs flex items-center space-x-2 shadow-sm self-start">
+                        <i class="fa-solid fa-up-right-from-square"></i>
+                        <span>Visitar Enlace de Internet Real</span>
+                    </a>
+                `;
+                previewPanel = `
+                    <div class="bg-slate-100 border border-slate-300 rounded-lg p-3 space-y-2 mt-2">
+                        <div class="flex items-center space-x-2 text-[10px] text-slate-400 bg-white p-1 rounded border">
+                            <i class="fa-solid fa-lock text-emerald-500"></i>
+                            <span class="truncate flex-1">${res.fileUrl}</span>
+                            <span class="text-emerald-600 font-bold"><i class="fa-solid fa-circle-check"></i> Seguro</span>
+                        </div>
+                        <div class="bg-white rounded border border-slate-200 p-4 h-36 flex flex-col justify-center items-center text-center">
+                            <i class="fa-solid fa-globe text-3xl text-slate-300 mb-2"></i>
+                            <p class="font-bold text-slate-700 text-xs">Simulador de Navegador M. Henriquez</p>
+                            <p class="text-[10px] text-slate-400">Verificando enlace web con servidores de Caterpillar Inc.</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                actionButton = `
+                    <a href="${res.fileUrl}" download="${res.fileName}" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-lg text-xs flex items-center space-x-2 shadow-sm self-start">
+                        <i class="fa-solid fa-cloud-arrow-down"></i>
+                        <span>Descargar Archivo Local</span>
+                    </a>
+                `;
+                previewPanel = `
+                    <div class="flex-1 bg-white border border-slate-200 rounded-lg p-4 font-mono text-xs overflow-y-auto whitespace-pre-wrap text-slate-700 shadow-inner min-h-[220px]">
+${res.simulatedContent}
+                    </div>
+                `;
+            }
+
+            viewer.innerHTML = `
+                <div class="flex flex-col h-full space-y-4">
+                    <!-- Cabecera del Visor -->
+                    <div class="flex justify-between items-start border-b border-slate-200 pb-3">
+                        <div class="flex items-center space-x-3">
+                            <div>${fileIcon}</div>
+                            <div>
+                                <h4 class="font-extrabold text-sm text-slate-800">${res.title}</h4>
+                                <p class="text-[10px] text-slate-400">Archivo: ${res.fileName} • Categoría: ${res.category}</p>
+                            </div>
+                        </div>
+                        <span class="bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded text-[9px] uppercase">${res.type}</span>
+                    </div>
+
+                    <!-- Datos de Vinculación de Maquinaria -->
+                    <div class="bg-blue-50 border border-blue-100 p-3 rounded-lg text-xs flex justify-between items-center text-slate-700">
+                        <span><i class="fa-solid fa-link text-blue-500 mr-1.5"></i> Equipo Vinculado:</span>
+                        <strong class="text-blue-800">${assetLabel}</strong>
+                    </div>
+
+                    <!-- Panel de previsualización o simulación -->
+                    ${previewPanel}
+
+                    <!-- Acciones del Documento -->
+                    <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-200">
+                        ${actionButton}
+                        <button onclick="unlinkDocument('${res.id}')" class="px-3 py-2 border border-red-200 hover:bg-red-50 text-red-600 rounded-lg text-xs font-bold transition-all">
+                            Desvincular Equipo
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // SIMULAR ROTURA DE STOCK
+        function simulateMaterialShortage() {
+            state.spares[0].stock = 1;
+            renderSpares();
+            showNotification(`¡AVISO DE COMPRAS! Filtro CAT 1R-1808 ha entrado en ruptura de stock (Mínimo de seguridad: 3).`, "danger");
+        }
+
+        // GENERACIÓN DE ARCHIVO DE COMPRAS E INTEGRACIÓN DESGLOSADA (ITBMS 7%)
+        function renderPurchaseOrders() {
+            const tbody = document.getElementById('purchase-orders-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = "";
+            state.compras.forEach(po => {
+                const sub = po.amount;
+                const tax = sub * 0.07;
+                const total = sub + tax;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-3 font-bold text-slate-700">${po.id}</td>
+                        <td class="p-3">${po.supplier}</td>
+                        <td class="p-3 font-medium text-slate-800">${po.detail}</td>
+                        <td class="p-3 font-semibold text-slate-800">$${sub.toFixed(2)}</td>
+                        <td class="p-3 text-slate-500">$${tax.toFixed(2)}</td>
+                        <td class="p-3 font-extrabold text-slate-900">$${total.toFixed(2)} USD</td>
+                        <td class="p-3 font-semibold text-blue-600">${po.ot}</td>
+                        <td class="p-3"><span class="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded">${po.status}</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderFailureHistory() {
+            const ul = document.getElementById('failure-history-list');
+            if (!ul) return;
+            ul.innerHTML = "";
+            state.fallas.forEach(f => {
+                const badge = f.severity === 'ALTA' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700';
+                ul.innerHTML += `
+                    <li class="border border-slate-100 p-3 rounded-lg flex justify-between items-center bg-slate-50/50 text-xs">
+                        <div>
+                            <p class="font-bold text-slate-800">${f.asset}</p>
+                            <p class="text-slate-500 mt-0.5">${f.desc}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="${badge} text-[9px] font-bold px-2 py-0.5 rounded">${f.severity}</span>
+                            <p class="text-[9px] text-slate-400 mt-1">${f.date}</p>
+                        </div>
+                    </li>
+                `;
+            });
+        }
+
+        function handleManualFailureSubmit(e) {
+            e.preventDefault();
+            const asset = document.getElementById('failure-asset-select').value;
+            const severity = document.getElementById('failure-severity-select').value;
+            const desc = document.getElementById('failure-desc-input').value;
+
+            const newFailure = {
+                id: "FL-" + Math.floor(100 + Math.random() * 900),
+                asset: asset,
+                severity: severity,
+                desc: desc,
+                date: "15/07/2026"
+            };
+
+            state.fallas.unshift(newFailure);
+            renderFailureHistory();
+            document.getElementById('failure-report-form').reset();
+            showNotification(`Incidente mecánico registrado para ${asset}.`, "warning");
+        }
+
+        // CONTROL DE CAMBIO DE VENTANAS TEMPORALES EN GRÁFICOS
+        function getTemporalChartData(scale) {
+            const dataSets = {
+                diario: {
+                    labels: ['Lunes 13', 'Martes 14', 'Miércoles 15'],
+                    data: [1200, 950, 2400]
+                },
+                semanal: {
+                    labels: ['Semana 26', 'Semana 27', 'Semana 28', 'Semana 29'],
+                    data: [8500, 11200, 14300, 18500]
+                },
+                mensual: {
+                    labels: ['Mayo', 'Junio', 'Julio'],
+                    data: [25400, 31200, 48200]
+                },
+                anual: {
+                    labels: ['Año 2024', 'Año 2025', 'Año 2026 (YTD)'],
+                    data: [120500, 142000, 186500]
+                }
+            };
+            return dataSets[scale] || dataSets['mensual'];
+        }
+
+        function updateDashboardCharts() {
+            const filterValue = document.getElementById('time-filter-dashboard').value;
+            const chartData = getTemporalChartData(filterValue);
+            
+            if (kpiTrendChartInstance) {
+                kpiTrendChartInstance.data.labels = chartData.labels;
+                kpiTrendChartInstance.data.datasets[0].data = chartData.data;
+                kpiTrendChartInstance.update();
+            }
+        }
+
+        function updateCostosModule() {
+            recalculateMetrics();
+            const filterValue = document.getElementById('time-filter-costos').value;
+            const chartData = getTemporalChartData(filterValue);
+            
+            if (costsChartInstance) {
+                costsChartInstance.data.labels = chartData.labels;
+                costsChartInstance.data.datasets[0].data = chartData.data.map(val => val * 0.6); // Repuestos
+                costsChartInstance.data.datasets[1].data = chartData.data.map(val => val * 0.4); // Mano de obra
+                costsChartInstance.update();
+            }
+        }
+
+        // GRÁFICOS (CHART.JS)
+        function initKpiChart() {
+            const canvas = document.getElementById('kpiTrendChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (kpiTrendChartInstance) kpiTrendChartInstance.destroy();
+
+            const initialData = getTemporalChartData('mensual');
+
+            kpiTrendChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: initialData.labels,
+                    datasets: [{
+                        label: 'Inversión de Mantenimiento ($ USD)',
+                        data: initialData.data,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.05)',
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function initCostsChart() {
+            const canvas = document.getElementById('costsChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (costsChartInstance) costsChartInstance.destroy();
+
+            costsChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['CAT 416', 'CAT 320', 'CAT D6', 'CAT 950', 'CAT CS11'],
+                    datasets: [
+                        {
+                            label: 'Repuestos ($ USD)',
+                            data: [3500, 4200, 1800, 2400, 1200],
+                            backgroundColor: '#2563eb'
+                        },
+                        {
+                            label: 'Mano de Obra ($ USD)',
+                            data: [1500, 2200, 950, 800, 600],
+                            backgroundColor: '#94a3b8'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        function openBudgetComparisonModal() {
+            document.getElementById('comparison-modal').classList.remove('hidden');
+        }
+
+        function closeBudgetComparisonModal() {
+            document.getElementById('comparison-modal').classList.add('hidden');
+        }
+    </script>
+
+</body>
+</html>

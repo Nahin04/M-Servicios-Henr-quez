@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMMS/EAM — Software por módulos (unificado)</title>
+  <style>
+    :root{--bg:#070b14;--card:#0f1730;--text:#e8efff;--muted:#9fb0dd;--accent:#4aa3ff;--line:rgba(255,255,255,.08)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+    header{padding:22px 18px;border-bottom:1px solid var(--line)}
+    header h1{margin:0;font-size:18px;letter-spacing:.2px}
+    header p{margin:6px 0 0;color:var(--muted);font-size:13px;max-width:1150px;line-height:1.55}
+    .wrap{max-width:1150px;margin:0 auto;padding:18px}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+    .card{background:linear-gradient(180deg, rgba(74,163,255,.08), rgba(15,23,48,1));border:1px solid var(--line);border-radius:14px;padding:14px}
+    .span-12{grid-column:span 12}.span-8{grid-column:span 8}.span-6{grid-column:span 6}.span-4{grid-column:span 4}.span-3{grid-column:span 3}
+    @media (max-width: 980px){.span-12,.span-8,.span-6,.span-4,.span-3{grid-column:span 12}}
+
+    .card h2{margin:0 0 10px;font-size:14px;display:flex;align-items:center;gap:8px}
+    .badge{font-size:12px;padding:4px 8px;border-radius:999px;background:rgba(74,163,255,.15);border:1px solid rgba(74,163,255,.35);color:var(--accent)}
+    ul{margin:10px 0 0;padding:0 0 0 18px}
+    li{margin:6px 0;color:var(--muted);font-size:13px;line-height:1.45}
+    .sub{color:var(--text);font-weight:650}
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .pill{font-size:12px;border:1px solid var(--line);padding:6px 10px;border-radius:999px;color:var(--muted)}
+
+    .note{margin-top:12px;color:var(--muted);font-size:12px;line-height:1.65;border-top:1px solid var(--line);padding-top:12px}
+    .btnbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    button{cursor:pointer;background:rgba(74,163,255,.14);border:1px solid rgba(74,163,255,.35);color:var(--text);padding:10px 12px;border-radius:10px}
+    button:hover{background:rgba(74,163,255,.22)}
+
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);padding:18px}
+    .modal.open{display:flex}
+    .modal .box{width:min(920px,100%);background:#0b1220;border:1px solid var(--line);border-radius:14px;padding:16px}
+    .code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;background:#07101e;border:1px solid var(--line);border-radius:12px;padding:12px;white-space:pre;overflow:auto;color:#cfe3ff;font-size:12px;line-height:1.5}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{text-decoration:underline}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>CMMS/EAM — Software por módulos (unificado)</h1>
+      <p>
+        Vista “tipo software” con apartados 1..11 y cómo se conectan con tu stack <b>PostgreSQL + TimescaleDB + RabbitMQ + MQTT</b>.
+        Incluye accesos a tus archivos de base textual (DDL .sql).
+      </p>
+      <div class="btnbar">
+        <button type="button" onclick="openModal('db')">Base de datos (PostgreSQL/TimescaleDB)</button>
+        <button type="button" onclick="openModal('rabbit')">Eventos (RabbitMQ)</button>
+        <button type="button" onclick="openModal('mqtt')">Ingesta SCADA (MQTT)</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="grid">
+      <div class="card span-12">
+        <h2><span class="badge">Stack</span> PostgreSQL + TimescaleDB + RabbitMQ + MQTT</h2>
+        <div class="row">
+          <div class="pill">OLTP: PostgreSQL</div>
+          <div class="pill">Time-series: TimescaleDB</div>
+          <div class="pill">Eventos de negocio: RabbitMQ</div>
+          <div class="pill">Tags IIoT: MQTT</div>
+        </div>
+        <div class="note">
+          Esta página unifica los HTML previos y sirve como <b>mapa</b>. Para “conectar” a tu BD necesitas un <b>backend</b> (API) que ejecute queries/ORM y publique/consume eventos.
+        </div>
+      </div>
+
+      <!-- 1 -->
+      <div class="card span-4">
+        <h2><span class="badge">1</span> Gestión de inventario</h2>
+        <ul>
+          <li><span class="sub">Subcarpetas:</span> domain/db/api/events/handlers/services</li>
+          <li>Stock por ubicación + trazabilidad por OT/recepciones</li>
+          <li>Alertas de stock mínimo y reserva</li>
+        </ul>
+      </div>
+
+      <!-- 2 -->
+      <div class="card span-4">
+        <h2><span class="badge">2</span> Costo de mantenimiento + ROI</h2>
+        <ul>
+          <li><span class="sub">Subcarpetas:</span> domain/db/api/events/handlers/services</li>
+          <li>Costos directos/indirectos por OT</li>
+          <li>ROI por equipo/periodo</li>
+        </ul>
+      </div>
+
+      <!-- 3 -->
+      <div class="card span-4">
+        <h2><span class="badge">3</span> Registro de falla + Downtime</h2>
+        <ul>
+          <li><span class="sub">Subcarpetas:</span> domain/db/api/events/handlers/services</li>
+          <li>Árbol de fallas (modo/cause/efecto)</li>
+          <li>Downtime oficial para MTBF/MTTR/Disponibilidad</li>
+        </ul>
+      </div>
+
+      <!-- 4 -->
+      <div class="card span-6">
+        <h2><span class="badge">4</span> Mantenimiento ↔ Producción</h2>
+        <ul>
+          <li><span class="sub">Subcarpetas:</span> domain/db/api/events/handlers/services</li>
+          <li>Ventanas de mantenimiento + impacto capacidad</li>
+          <li>Liberación de equipos con evidencia</li>
+        </ul>
+      </div>
+
+      <!-- 5 -->
+      <div class="card span-6">
+        <h2><span class="badge">5</span> Integración de compras (OT → Requisición → OC)</h2>
+        <ul>
+          <li><span class="sub">Subcarpetas:</span> domain/db/api/events/handlers/services</li>
+          <li>Flujo automatizado con aprobaciones</li>
+          <li>Recepción → Inventario y Costos</li>
+        </ul>
+      </div>
+
+      <!-- 6 -->
+      <div class="card span-4">
+        <h2><span class="badge">6</span> Integración SCADA/IIoT</h2>
+        <ul>
+          <li><span class="sub">Subcarpetas:</span> domain/db/api/events/handlers/services</li>
+          <li>Ingesta tags (horas de uso, temperatura, etc.)</li>
+          <li>Predictivo/preventivo + evidencia temporal</li>
+        </ul>
+      </div>
+
+      <!-- 7 -->
+      <div class="card span-4">
+        <h2><span class="badge">7</span> Calidad en fiabilidad (FMEA/RCA)</h2>
+        <ul>
+          <li><span class="sub">Subcarpetas:</span> domain/db/api/events/handlers/services</li>
+          <li>AMFE/FMEA + criticidad</li>
+          <li>RCA coliderado por Calidad + acciones CAPA</li>
+        </ul>
+      </div>
+
+      <!-- 8 -->
+      <div class="card span-4">
+        <h2><span class="badge">8</span> Comunicación interdepartamental</h2>
+        <ul>
+          <li><span class="sub">Subcarpetas:</span> domain/db/api/events/handlers/services</li>
+          <li>Notificaciones + workflows de aprobación</li>
+          <li>Muro de comentarios y anexos por OT/casos</li>
+        </ul>
+      </div>
+
+      <!-- 9 -->
+      <div class="card span-6">
+        <h2><span class="badge">9</span> Uso compartido multi-área (estándares)</h2>
+        <ul>
+          <li><span class="sub">Subcarpetas:</span> domain/db/api/events/handlers/services</li>
+          <li>Librerías globales versionadas + overrides locales</li>
+          <li>Comparabilidad entre plantas (KPIs)</li>
+        </ul>
+      </div>
+
+      <!-- 10 -->
+      <div class="card span-6">
+        <h2><span class="badge">10</span> KPIs (MTBF, MTTR, Disponibilidad, OEE, Cumpl. preventivo)</h2>
+        <ul>
+          <li><span class="sub">Subcarpetas:</span> domain/db/api/events/handlers/services</li>
+          <li>Motor analítico basado en eventos (downtime/OT/calidad)</li>
+          <li>Panel y trazabilidad del cálculo</li>
+        </ul>
+      </div>
+
+      <!-- 11 -->
+      <div class="card span-12">
+        <h2><span class="badge">11</span> Calidad en liberación, auditorías y desviaciones</h2>
+        <ul>
+          <li><span class="sub">Subcarpetas:</span> domain/db/api/events/handlers/services</li>
+          <li>Auditorías de proceso + gate de release</li>
+          <li>Nonconformance → CAPA → verificación efectividad</li>
+        </ul>
+      </div>
+
+      <div class="card span-12">
+        <h2><span class="badge">Backbone (Fase 1)</span> Lo que ya tienes como DDL textual</h2>
+        <div class="row">
+          <div class="pill">Fase 1: <a href="CMMS_phase1_asset_labor_pm.sql" target="_blank">CMMS_phase1_asset_labor_pm.sql</a></div>
+          <div class="pill">DDL base: <a href="CMMS_schema.sql" target="_blank">CMMS_schema.sql</a></div>
+          <div class="pill">Estructura carpetas: <a href="CMMS_app_structure/README.md" target="_blank">CMMS_app_structure/README.md</a></div>
+        </div>
+        <div class="note">
+          Los archivos <b>.sql</b> son ejecutables (DDL). Esta página solo muestra la organización “como software”.
+        </div>
+      </div>
+
+      <div class="card span-12">
+        <h2><span class="badge">Siguiente paso recomendado</span> Fase 2 DDL</h2>
+        <div class="note">
+          Generar en otro archivo SQL el resto: Inventario(1), Costos(2), Fallas/OT/Downtime(3), Ventanas(4), Compras(5), SCADA(6), Calidad(7/11), Workflow(8), Estándares(9), KPIs(10).
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="modal" class="modal" role="dialog" aria-modal="true">
+    <div class="box">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <h3 style="margin:0">Detalle: <span id="modalTitle" style="color:var(--accent)"></span></h3>
+        <button type="button" onclick="closeModal()">Cerrar</button>
+      </div>
+      <div class="note" style="border-top:none">
+        <div class="code" id="modalBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openModal(kind){
+      const modal = document.getElementById('modal');
+      const title = document.getElementById('modalTitle');
+      const body = document.getElementById('modalBody');
+
+      if(kind==='db'){
+        title.textContent='PostgreSQL + TimescaleDB';
+        body.textContent = 'Backbone OLTP en PostgreSQL + SCADA time-series en TimescaleDB.';
+      } else if(kind==='rabbit'){
+        title.textContent='RabbitMQ (Eventos)';
+        body.textContent = [
+          'Eventos conceptuales (ejemplos):',
+          '- FailureReported',
+          '- DowntimeRecorded',
+          '- SpareConsumed',
+          '- PurchaseOrderConfirmed',
+          '- PredictiveTriggerFired',
+          '- ReleaseGatePassed/Blocked',
+          '',
+          'Uso: desacoplar módulos y disparar workflows + recomputo KPIs.'
+        ].join('\n');
+      } else {
+        title.textContent='MQTT (SCADA)';
+        body.textContent = [
+          'Gateway/PLC/IIoT -> MQTT broker -> backend',
+          'El backend persiste a TimescaleDB (tag_ingestion_event) y evalúa reglas predictivas.'
+        ].join('\n');
+      }
+
+      modal.classList.add('open');
+    }
+    function closeModal(){
+      document.getElementById('modal').classList.remove('open');
+    }
+  </script>
+</body>
+</html>
+
