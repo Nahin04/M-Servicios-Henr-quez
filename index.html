@@ -1212,7 +1212,7 @@
                     usefulLife: "10 años",
                     warranty: "Hasta 5,000 hrs",
                     provider: "Cardoze & Lindo",
-                    photo: "https://images.unsplash.com/photo-1579684389782-64d84b5e905d?auto=format&fit=crop&q=80&w=400",
+                    photo: "https://s7d2.scene7.com/is/image/Caterpillar/C338589",
                     specs: {
                         lubricants: "SAE 15W-40 Premium",
                         coolantCapacity: "19 L",
@@ -1221,7 +1221,7 @@
                         airFilter: "CAT 1R-1808"
                     },
                     gallery: [
-                        "https://images.unsplash.com/photo-1579684389782-64d84b5e905d?auto=format&fit=crop&q=80&w=400"
+                        "https://s7d2.scene7.com/is/image/Caterpillar/C338589"
                     ]
                 },
                 {
@@ -1240,7 +1240,7 @@
                     usefulLife: "12 años",
                     warranty: "Hasta 6,000 hrs",
                     provider: "Cardoze & Lindo",
-                    photo: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=400",
+                    photo: "https://s7d2.scene7.com/is/image/Caterpillar/CM20170417-48239-28017?$hero-cc-t1$",
                     specs: {
                         lubricants: "SAE 15W-40 Ultra",
                         coolantCapacity: "28 L",
@@ -1249,7 +1249,7 @@
                         airFilter: "CAT 1R-0716"
                     },
                     gallery: [
-                        "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=400"
+                        "https://s7d2.scene7.com/is/image/Caterpillar/CM20170417-48239-28017?$hero-cc-t1$"
                     ]
                 },
                 {
@@ -1268,7 +1268,7 @@
                     usefulLife: "15 años",
                     warranty: "Vencida",
                     provider: "COPAMA",
-                    photo: "https://images.unsplash.com/photo-1541625602330-2277a4c4b28d?auto=format&fit=crop&q=80&w=400",
+                    photo: "https://s7d2.scene7.com/is/image/Caterpillar/CM20180928-34732-61567?$cc-g$&fmt=pjpeg",
                     specs: {
                         lubricants: "SAE 15W-40 Heavy Duty",
                         coolantCapacity: "34 L",
@@ -1277,7 +1277,7 @@
                         airFilter: "CAT 1R-1808"
                     },
                     gallery: [
-                        "https://images.unsplash.com/photo-1541625602330-2277a4c4b28d?auto=format&fit=crop&q=80&w=400"
+                        "https://s7d2.scene7.com/is/image/Caterpillar/CM20180928-34732-61567?$cc-g$&fmt=pjpeg"
                     ]
                 },
                 {
@@ -1296,7 +1296,7 @@
                     usefulLife: "10 años",
                     warranty: "Hasta 4,000 hrs",
                     provider: "Cardoze & Lindo",
-                    photo: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&q=80&w=400",
+                    photo: "https://s7d2.scene7.com/is/image/Caterpillar/CM20220825-315db-12a5e",
                     specs: {
                         lubricants: "SAE 15W-40 Elite",
                         coolantCapacity: "30 L",
@@ -1305,7 +1305,7 @@
                         airFilter: "CAT 1P-7360"
                     },
                     gallery: [
-                        "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&q=80&w=400"
+                        "https://s7d2.scene7.com/is/image/Caterpillar/CM20220825-315db-12a5e"
                     ]
                 },
                 {
@@ -1324,7 +1324,7 @@
                     usefulLife: "8 años",
                     warranty: "Hasta 3,000 hrs",
                     provider: "Grupo Tova",
-                    photo: "https://images.unsplash.com/photo-1579684275623-00910f73315c?auto=format&fit=crop&q=80&w=400",
+                    photo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRUr9Ur1qLdK4ZqrMQKTmUbl-lJTrRF0LUAmD7QmFKuHg&s=10",
                     specs: {
                         lubricants: "SAE 15W-40 Standard",
                         coolantCapacity: "22 L",
@@ -1333,7 +1333,7 @@
                         airFilter: "CAT 1R-0714"
                     },
                     gallery: [
-                        "https://images.unsplash.com/photo-1579684275623-00910f73315c?auto=format&fit=crop&q=80&w=400"
+                        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRUr9Ur1qLdK4ZqrMQKTmUbl-lJTrRF0LUAmD7QmFKuHg&s=10"
                     ]
                 }
             ],
@@ -1678,6 +1678,41 @@ Herramientas visuales como Chart.js que permiten segmentar los costos por día, 
             }, 6000); // Actualiza cada 6 segundos simulando avance de motores
         }
 
+        function getPrimarySpareLabel(eq) {
+            // Intenta escoger el repuesto más representativo para el equipo según compatibilidad.
+            const primary = (state.spares || []).find(sp => {
+                if (!sp.compat) return false;
+                const firstToken = (sp.compat.split(',')[0] || '').trim();
+                return firstToken && eq.id && eq.id.includes(firstToken);
+            }) || (state.spares || []).find(sp => (sp.compat || '').toLowerCase().includes(String(eq.model).toLowerCase()))
+              || (state.spares || [])[0];
+
+            if (!primary) return "-";
+            return `${primary.name}`;
+        }
+
+        function getPrimarySpareStockHint(eq) {
+            const primary = (state.spares || []).find(sp => {
+                if (!sp.compat) return false;
+                const firstToken = (sp.compat.split(',')[0] || '').trim();
+                return firstToken && eq.id && eq.id.includes(firstToken);
+            }) || (state.spares || []).find(sp => (sp.compat || '').toLowerCase().includes(String(eq.model).toLowerCase()))
+              || (state.spares || [])[0];
+
+            if (!primary) return "-";
+            return `${primary.stock} (min ${primary.minStock})`;
+        }
+
+        function getPrimarySpareImage(eq) {
+            // No tenemos campo image en spares; usamos un fallback por stock/compat.
+            const primary = (state.spares || []).find(sp => (sp.compat || '').toLowerCase().includes(String(eq.model).toLowerCase()))
+              || (state.spares || [])[0];
+            if (!primary) {
+                return "https://images.unsplash.com/photo-1581092919535-7146c3d9b0fe?auto=format&fit=crop&q=80&w=400";
+            }
+            return "https://images.unsplash.com/photo-1581092919535-7146c3d9b0fe?auto=format&fit=crop&q=80&w=400";
+        }
+
         function renderDashboardHours() {
             const container = document.getElementById('dashboard-hours-container');
             if (!container) return;
@@ -1686,9 +1721,25 @@ Herramientas visuales como Chart.js que permiten segmentar los costos por día, 
                 container.innerHTML += `
                     <div class="border border-slate-200 bg-white rounded-xl p-4 shadow-sm hover:border-blue-300 transition-all text-center">
                         <span class="w-2.5 h-2.5 ${eq.status === 'OPERATIVO' ? 'bg-emerald-500' : 'bg-red-500 scada-pulse'} rounded-full inline-block mb-1.5"></span>
-                        <h4 class="font-bold text-xs text-slate-700">${eq.model}</h4>
-                        <p class="text-[10px] text-slate-400">${eq.name.split(' ')[1] || 'Equipo'}</p>
-                        <p id="dash-hours-${eq.id}" class="text-sm font-bold text-slate-800 mt-2">${eq.hours} Hrs</p>
+                        <h4 class="font-bold text-xs text-slate-700">${eq.name}</h4>
+                        <div class="mt-1">
+                            <p class="text-[10px] text-slate-500">Modelo: <span class="font-semibold text-slate-700">${eq.model}</span></p>
+                            <p id="dash-hours-${eq.id}" class="text-sm font-bold text-slate-800 mt-1">${eq.hours} Hrs</p>
+                        </div>
+                        <div class="mt-3 border-t border-slate-100 pt-3 text-left">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Repuesto y Datos</p>
+                            <p class="text-[10px] text-slate-600 mt-1">
+                                <span class="font-semibold text-slate-700">Filtro/Consumible:</span>
+                                <span class="font-bold text-slate-800">${getPrimarySpareLabel(eq)}</span>
+                            </p>
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="text-[10px] text-slate-500">Stock (min)</span>
+                                <span class="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-1 rounded-lg">${getPrimarySpareStockHint(eq)}</span>
+                            </div>
+                            <div class="mt-2">
+                                <img id="dash-spare-img-${eq.id}" src="${getPrimarySpareImage(eq)}" alt="Repuesto" class="w-full h-20 object-cover rounded-lg border border-slate-100" onerror="this.src='https://images.unsplash.com/photo-1581092919535-7146c3d9b0fe?auto=format&fit=crop&q=80&w=400'" />
+                            </div>
+                        </div>
                     </div>
                 `;
             });
