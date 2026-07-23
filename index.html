@@ -688,6 +688,19 @@
                                     <button onclick="showKbConcept('herramientas')" class="w-full text-left p-2.5 rounded bg-slate-800 hover:bg-slate-700 transition-all border-l-4 border-purple-500 font-bold">
                                         4. Interpretación de Indicadores
                                     </button>
+                                    <hr class="border-slate-700 my-2">
+                                    <button onclick="showKbConcept('decisiones')" class="w-full text-left p-2.5 rounded bg-slate-800 hover:bg-cyan-700 transition-all border-l-4 border-cyan-400 font-bold">
+                                        5. Toma de Decisiones y Mejora Continua
+                                    </button>
+                                    <button onclick="showKbConcept('rca')" class="w-full text-left p-2.5 rounded bg-slate-800 hover:bg-orange-700 transition-all border-l-4 border-orange-400 font-bold">
+                                        6. Análisis Causa Raíz de Fallas Graves
+                                    </button>
+                                    <button onclick="showKbConcept('criticidad')" class="w-full text-left p-2.5 rounded bg-slate-800 hover:bg-rose-700 transition-all border-l-4 border-rose-400 font-bold">
+                                        7. Análisis de Criticidad de Activos
+                                    </button>
+                                    <button onclick="showKbConcept('oee')" class="w-full text-left p-2.5 rounded bg-slate-800 hover:bg-yellow-700 transition-all border-l-4 border-yellow-400 font-bold">
+                                        8. ¿Qué es OEE en Gestión del Mantenimiento?
+                                    </button>
                                 </div>
                             </div>
 
@@ -1544,6 +1557,240 @@ Metodología para no quedarse en la superficie de una avería. Si una bomba hidr
 
 3. DASHBOARDS DINÁMICOS EN TIEMPO REAL:
 Herramientas visuales como Chart.js que permiten segmentar los costos por día, semana, mes y año para identificar fugas presupuestarias de forma inmediata.`
+            },
+            // === NUEVOS TEMAS AGREGADOS (SOLICITADOS) ===
+            decisiones: {
+                title: "5. Indicadores para la Toma de Decisiones y Mejora Continua",
+                type: "Estándar Corporativo",
+                category: "KPIs Estratégicos",
+                fileName: "Indicadores_Mejora_Continua.pdf",
+                simulatedContent: `INDICADORES PARA LA TOMA DE DECISIONES Y MEJORA CONTINUA
+
+La mejora continua en mantenimiento se basa en datos objetivos. A continuación los indicadores clave:
+
+1. KPIs TÁCTICOS (Nivel Supervisor):
+   - Cumplimiento del Plan Preventivo (CPP): % de OTs preventivas ejecutadas vs programadas.
+   - Tiempo Medio Entre Fallas (MTBF): Horas de operación entre fallas consecutivas.
+   - Tiempo Medio de Reparación (MTTR): Horas promedio para restaurar la función del equipo.
+
+2. KPIs ESTRATÉGICOS (Nivel Gerencial):
+   - Disponibilidad de Flota: % de tiempo que los activos están listos para operar.
+   - Costo de Mantenimiento por Hora: $ USD / hora operativa.
+   - ROI en Mantenimiento: Retorno de inversión de las acciones preventivas vs correctivas.
+
+3. MEJORA CONTINUA (Ciclo PHVA):
+   - Planificar: Establecer metas de reducción de downtime (Ej: -15% en Q3).
+   - Hacer: Ejecutar planes de acción con responsables y fechas.
+   - Verificar: Comparar KPIs antes/después usando dashboards del CMMS.
+   - Actuar: Ajustar frecuencias de mantenimiento o procedimientos según resultados.
+
+META MULTISERVICIOS HENRIQUEZ: Reducir el 20% de fallas recurrentes mediante análisis mensual de tendencias y ajuste de intervalos de lubricación.`
+            },
+            rca: {
+                title: "6. Análisis Causa Raíz de Fallas Graves en Activos",
+                type: "Estándar Corporativo",
+                category: "RCA / Confiabilidad",
+                fileName: "Analisis_Causa_Raiz_Fallas.pdf",
+                simulatedContent: `ANÁLISIS CAUSA RAÍZ DE FALLAS GRAVES EN ACTIVOS
+DATOS SIMULADOS REALES - FLOTA CAT MULTISERVICIOS HENRIQUEZ
+
+=================================================================
+CASO 1: FALLA GRAVE EN CAT 320 (Excavadora Hidráulica)
+=================================================================
+Fecha del evento: 12/06/2026        Horómetro: 5,920 Hrs
+Síntoma: Pérdida total de presión hidráulica en circuito de giro.
+Impacto: 3 días de inactividad ($4,500 USD/día en penalización).
+
+ÁRBOL DE CAUSA RAÍZ (5 PORQUÉS):
+┌─────────────────────────────────────────────────────────────┐
+│ 1. ¿Por qué falló el giro? → Rotura del block de válvulas. │
+│ 2. ¿Por qué se rompió? → Fatiga del material en cuerpo.    │
+│ 3. ¿Por qué hubo fatiga? → Contaminación con partículas.   │
+│ 4. ¿Por qué había partículas? → Filtro de retorno taponado.│
+│ 5. ¿Por qué estaba taponado? → Excedió 800Hrs sin cambio.  │
+└─────────────────────────────────────────────────────────────┘
+
+CAUSA RAÍZ: Intervalo de cambio de filtro excedido en 300 horas.
+ACCIÓN CORRECTIVA: 
+  - Reemplazo inmediato de block de válvulas ($2,800 USD).
+  - Flushing completo del sistema hidráulico ($950 USD).
+ACCIÓN PREVENTIVA:
+  - Alerta automática en CMMS cuando el filtro llegue a 450 hrs.
+  - Incluir inspección del filtro en el checklist de la OT preventiva.
+
+=================================================================
+CASO 2: FALLA GRAVE EN CAT D6 (Bulldozer)
+=================================================================
+Fecha del evento: 28/05/2026        Horómetro: 7,800 Hrs
+Síntoma: Sobrecalentamiento del motor con pérdida de potencia.
+Impacto: 2 días de inactividad. Reparación de emergencia.
+
+ÁRBOL DE CAUSA RAÍZ:
+┌─────────────────────────────────────────────────────────────┐
+│ 1. ¿Por qué se sobrecalentó? → Radiador obstruido.         │
+│ 2. ¿Por qué se obstruyó? → Acumulación de lodo y residuos. │
+│ 3. ¿Por qué no se limpió? → No estaba en el plan de PM.    │
+│ 4. ¿Por qué no estaba? → Procedimiento omitido por error.  │
+│ 5. ¿Por qué se omitió? → Falta de checklist detallado.     │
+└─────────────────────────────────────────────────────────────┘
+
+CAUSA RAÍZ: Procedimiento de limpieza de radiador no incluido en el plan maestro de mantenimiento.
+ACCIÓN CORRECTIVA:
+  - Limpieza profunda del radiador y reemplazo de termostato ($650 USD).
+ACCIÓN PREVENTIVA:
+  - Actualización del plan de mantenimiento para incluir limpieza de radiador cada 500 hrs.
+  - Capacitación al técnico en el procedimiento de soplado cruzado.
+
+=================================================================
+MÉTRICAS AGREGADAS DE RCA (ÚLTIMOS 6 MESES):
+=================================================================
+- Fallas analizadas con RCA: 12
+- Causas raíz identificadas: 9 técnicas / 3 procedimentales
+- Efectividad de acciones correctivas: 83%
+- Reducción de recurrencia post-RCA: 67%
+- Ahorro estimado por falla evitada: $3,200 USD promedio
+`
+            },
+            criticidad: {
+                title: "7. Análisis de Criticidad de Activos: ¿Qué los hace Críticos?",
+                type: "Estándar Corporativo",
+                category: "Gestión de Riesgos",
+                fileName: "Analisis_Criticidad_Activos.pdf",
+                simulatedContent: `ANÁLISIS DE CRITICIDAD DE ACTIVOS
+MATRIZ DE RIESGO - MULTISERVICIOS HENRIQUEZ S.A.
+
+¿QUÉ HACE CRÍTICO A UN ACTIVO DENTRO DEL PROCESO?
+Un activo se clasifica como CRÍTICO cuando su falla impacta significativamente en:
+
+1. SEGURIDAD Y MEDIO AMBIENTE (Ponderación: 40%)
+   - ¿La falla puede causar lesiones al personal?
+   - ¿Puede generar derrames o daños ambientales?
+   - Ejemplo CAT 320: Falla hidráulica en puerto → riesgo de vuelco.
+
+2. PRODUCCIÓN Y OPERACIONES (Ponderación: 35%)
+   - ¿El equipo es único en su tipo en el proyecto?
+   - ¿Existe redundancia (equipo de respaldo)?
+   - Tiempo de reparación vs tolerancia de parada.
+   - Ejemplo CAT D6: Sin reemplazo directo en Sabanitas → CRÍTICO.
+
+3. COSTO DE REPARACIÓN Y REPUESTOS (Ponderación: 15%)
+   - Costo de intervención mayor vs presupuesto disponible.
+   - Plazo de entrega de repuestos importados (Ej: 45 días desde Miami).
+   - Ejemplo CAT 950 GC: Rodillo de transmisión especial → Lead time 60 días.
+
+4. IMPACTO EN CALIDAD (Ponderación: 10%)
+   - ¿La falla afecta la calidad del producto final (compactación, nivelación)?
+   - ¿Genera reprocesos costosos?
+
+=================================================================
+MATRIZ DE CRITICIDAD - FLOTA MULTISERVICIOS HENRIQUEZ
+=================================================================
+┌─────────────────────┬──────────┬──────────┬──────────┬──────────┐
+│ ACTIVO              │ Seguridad│ Prod.    │ Costo    │ Calidad  │
+├─────────────────────┼──────────┼──────────┼──────────┼──────────┤
+│ CAT 320 (Excav.)    │   10     │    9     │    8     │    7     │ → CRÍTICO (34)
+│ CAT D6 (Bulldozer)  │    8     │   10     │    6     │    8     │ → CRÍTICO (32)
+│ CAT 416 (Retroexc.) │    7     │    7     │    5     │    6     │ → MEDIO (25)
+│ CAT 950 GC (Carg.)  │    6     │    8     │    7     │    5     │ → ALTO (26)
+│ CAT CS11 (Rodillo)  │    5     │    6     │    4     │    9     │ → MEDIO (24)
+└─────────────────────┴──────────┴──────────┴──────────┴──────────┘
+
+Puntaje: >30 = CRÍTICO | 25-30 = ALTO | 15-24 = MEDIO | <15 = BAJO
+
+=================================================================
+ACCIÓN POR NIVEL DE CRITICIDAD:
+=================================================================
+CRÍTICO (Score >30): 
+  - Mantenimiento predictivo avanzado (termografía, análisis de aceite).
+  - Stock de seguridad de repuestos críticos en bodega.
+  - Plan de contingencia documentado y entrenado.
+
+ALTO (Score 25-30):
+  - Mantenimiento preventivo riguroso con checklist ampliado.
+  - Monitoreo semanal de condición.
+
+MEDIO (Score 15-24):
+  - Mantenimiento preventivo estándar por horas.
+  - Inspección visual diaria por el operador.
+
+BAJO (Score <15):
+  - Mantenimiento correctivo programado (run-to-failure aceptable).
+`
+            },
+            oee: {
+                title: "8. ¿Qué es OEE en la Gestión del Mantenimiento?",
+                type: "Estándar Corporativo",
+                category: "Efectividad Global",
+                fileName: "OEE_Mantenimiento.pdf",
+                simulatedContent: `¿QUÉ ES OEE EN LA GESTIÓN DEL MANTENIMIENTO?
+OEE = Overall Equipment Effectiveness (Efectividad Global del Equipo)
+
+El OEE es el indicador gold-standard de clase mundial para medir qué tan productivo es un activo. Integra tres factores críticos:
+
+=================================================================
+FÓRMULA OEE:
+=================================================================
+        OEE = DISPONIBILIDAD × RENDIMIENTO × CALIDAD
+
+Donde cada factor se calcula así:
+
+1. DISPONIBILIDAD (Availability):
+   - Fórmula: (Tiempo operativo real) / (Tiempo planificado de producción)
+   - Penaliza: Paros no planificados, averías, setup y ajustes.
+   - Meta Clase Mundial: > 90%
+
+2. RENDIMIENTO (Performance):
+   - Fórmula: (Producción real) / (Producción teórica en tiempo operativo)
+   - Penaliza: Micro-paradas, velocidad reducida, ineficiencias del operador.
+   - Meta Clase Mundial: > 95%
+
+3. CALIDAD (Quality):
+   - Fórmula: (Unidades buenas) / (Unidades totales producidas)
+   - Penaliza: Reprocesos, trabajos mal ejecutados, retrabajos.
+   - Meta Clase Mundial: > 99%
+
+=================================================================
+EJEMPLO PRÁCTICO - CAT 950 GC (Cargador Frontal)
+=================================================================
+DATOS DEL DÍA (Turno de 10 horas = 600 minutos):
+- Tiempo planificado: 600 min
+- Tiempo operativo real: 480 min (120 min de paros no planificados)
+- Ciclos teóricos: 15 ciclos/hora → 120 ciclos en 480 min
+- Ciclos reales: 102 ciclos (rendimiento reducido)
+- Cargas buenas a la primera: 96 de 102 (6 con problemas de peso)
+
+CÁLCULOS:
+Disponibilidad = 480 / 600 = 80.0%
+Rendimiento     = 102 / 120 = 85.0%
+Calidad         = 96 / 102  = 94.1%
+
+OEE = 80.0% × 85.0% × 94.1% = 64.0%
+
+=================================================================
+INTERPRETACIÓN DEL OEE:
+=================================================================
+OEE < 65%   → DEFICIENTE (Se requieren acciones correctivas urgentes)
+OEE 65-75%  → REGULAR (Potencial de mejora significativo)
+OEE 75-85%  → ACEPTABLE (Buen desempeño con margen de mejora)
+OEE 85-95%  → BUENO (Clase mundial en proceso)
+OEE > 95%   → EXCELENTE (Clase mundial)
+
+=================================================================
+¿CÓMO MEJORAR EL OEE DESDE MANTENIMIENTO?
+=================================================================
+1. DISPONIBILIDAD: Reducir MTTR mediante diagnósticos rápidos y
+   estandarización de repuestos críticos en bodega.
+
+2. RENDIMIENTO: Mantener equipos calibrados y lubricados para
+   operar a velocidad nominal sin pérdidas.
+
+3. CALIDAD: Asegurar que las reparaciones devuelvan el equipo a
+   especificaciones de fábrica mediante checklists de conformidad.
+
+META MULTISERVICIOS HENRIQUEZ: Alcanzar OEE > 75% en toda la flota
+para el cierre del ejercicio fiscal 2026, partiendo de una línea
+base estimada del 58% actual.
+`
             }
         };
 
@@ -2741,6 +2988,10 @@ Herramientas visuales como Chart.js que permiten segmentar los costos por día, 
             if (conceptKey === 'costos') fileIcon = '<i class="fa-solid fa-file-invoice-dollar text-2xl text-emerald-500"></i>';
             if (conceptKey === 'confiabilidad') fileIcon = '<i class="fa-solid fa-shield text-2xl text-amber-500"></i>';
             if (conceptKey === 'herramientas') fileIcon = '<i class="fa-solid fa-magnifying-glass-chart text-2xl text-purple-500"></i>';
+            if (conceptKey === 'decisiones') fileIcon = '<i class="fa-solid fa-chart-simple text-2xl text-cyan-400"></i>';
+            if (conceptKey === 'rca') fileIcon = '<i class="fa-solid fa-diagram-project text-2xl text-orange-400"></i>';
+            if (conceptKey === 'criticidad') fileIcon = '<i class="fa-solid fa-triangle-exclamation text-2xl text-rose-400"></i>';
+            if (conceptKey === 'oee') fileIcon = '<i class="fa-solid fa-gauge-high text-2xl text-yellow-400"></i>';
 
             viewer.innerHTML = `
                 <div class="flex flex-col h-full space-y-4">
